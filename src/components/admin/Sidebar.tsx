@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, UtensilsCrossed, Table2, Package,
   ShoppingBag, Palette, LogOut, Menu, X, CalendarCheck,
-  ListTodo, Users
+  ListTodo, Users, Info
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
@@ -19,6 +19,7 @@ const menuItems = [
   { href: '/admin/catalogue', icon: Package, label: 'Catalogue' },
   { href: '/admin/commandes', icon: ShoppingBag, label: 'Commandes' },
   { href: '/admin/attributs', icon: ListTodo, label: 'Attributs' },
+  { href: '/admin/infos', icon: Info, label: 'Infos' },
   { href: '/admin/comptes', icon: Users, label: 'Comptes' },
   { href: '/admin/theme', icon: Palette, label: 'Thème' },
 ]

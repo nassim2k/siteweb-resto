@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { UtensilsCrossed, ShoppingBag, LogIn, MapPin, Clock, Phone, PackageSearch, Search, ArrowRight } from 'lucide-react'
+import { UtensilsCrossed, ShoppingBag, LogIn, MapPin, Clock, Phone, Mail, PackageSearch, ArrowRight } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { useTheme } from '@/components/ThemeProvider'
@@ -199,26 +199,50 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Infos */}
+      {/* Infos établissement */}
       <section className="py-16 sm:py-20 bg-white">
         <div className="container mx-auto px-4">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="grid sm:grid-cols-3 gap-6 sm:gap-8 max-w-3xl mx-auto text-center">
+          <motion.h3 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-2xl sm:text-3xl font-bold text-center mb-12">
+            {theme?.site_name || 'Notre restaurant'}
+          </motion.h3>
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="grid sm:grid-cols-4 gap-6 sm:gap-8 max-w-4xl mx-auto text-center">
             <div className="space-y-3">
               <Clock className="mx-auto text-[var(--primary)]" size={28} />
               <h4 className="font-bold">Horaires</h4>
-              <p className="text-sm text-gray-500">Lun-Sam : 12h-14h · 19h-22h<br />Dim : 12h-15h</p>
+              <p className="text-sm text-gray-500 whitespace-pre-line">{theme?.hours || 'Lun-Sam : 12h-14h · 19h-22h\nDim : 12h-15h'}</p>
             </div>
             <div className="space-y-3">
               <MapPin className="mx-auto text-[var(--primary)]" size={28} />
               <h4 className="font-bold">Adresse</h4>
-              <p className="text-sm text-gray-500">122 Rue du Restaurant<br />75000 Paris</p>
+              <p className="text-sm text-gray-500">{theme?.address || '122 Rue du Restaurant\n75000 Paris'}</p>
             </div>
             <div className="space-y-3">
               <Phone className="mx-auto text-[var(--primary)]" size={28} />
+              <h4 className="font-bold">Téléphone</h4>
+              <p className="text-sm text-gray-500">{theme?.phone || '01 23 45 67 89'}</p>
+            </div>
+            <div className="space-y-3">
+              <Mail className="mx-auto text-[var(--primary)]" size={28} />
               <h4 className="font-bold">Contact</h4>
-              <p className="text-sm text-gray-500">01 23 45 67 89<br />contact@restaurant.fr</p>
+              <p className="text-sm text-gray-500">{theme?.contact_email || 'contact@restaurant.fr'}</p>
             </div>
           </motion.div>
+          {theme?.location_url && (
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-8 max-w-4xl mx-auto">
+              <div className="rounded-xl overflow-hidden shadow-sm h-64 sm:h-80">
+                <iframe
+                  src={theme.location_url}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Localisation"
+                />
+              </div>
+            </motion.div>
+          )}
         </div>
       </section>
 

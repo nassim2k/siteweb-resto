@@ -14,6 +14,11 @@ export interface Theme {
   logo_url: string | null
   site_name: string
   hero_images: string[]
+  address: string | null
+  phone: string | null
+  contact_email: string | null
+  hours: string | null
+  location_url: string | null
   updated_at: string
 }
 
