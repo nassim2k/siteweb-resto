@@ -217,7 +217,7 @@ export default function SuiviContent({ initialEmail }: { initialEmail: string })
                 </p>
               </div>
 
-              <div className="bg-white/60 backdrop-blur-md rounded-xl p-5 shadow-lg">
+              <div className="bg-white/40 backdrop-blur-lg rounded-xl p-5 shadow-lg">
                 <h3 className="font-bold mb-4 flex items-center gap-2">
                   <ShoppingBag size={18} /> Détails de la commande
                 </h3>
@@ -249,7 +249,7 @@ export default function SuiviContent({ initialEmail }: { initialEmail: string })
                 )}
               </div>
 
-              <div className="bg-white/60 backdrop-blur-md rounded-xl p-5 shadow-lg">
+              <div className="bg-white/40 backdrop-blur-lg rounded-xl p-5 shadow-lg">
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-sm font-medium">Progression</span>
                   <span className="text-sm font-bold text-[var(--primary)]">{progress}%</span>
@@ -261,7 +261,7 @@ export default function SuiviContent({ initialEmail }: { initialEmail: string })
                 </div>
               </div>
 
-              <div className="bg-white/60 backdrop-blur-md rounded-xl p-5 shadow-lg">
+              <div className="bg-white/40 backdrop-blur-lg rounded-xl p-5 shadow-lg">
                 <div className="relative">
                   {statusSteps.map((step, i) => {
                     const isPast = stepIndex >= i
