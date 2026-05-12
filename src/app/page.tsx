@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { UtensilsCrossed, ShoppingBag, LogIn, MapPin, Clock, Phone, PackageSearch } from 'lucide-react'
+import { UtensilsCrossed, ShoppingBag, LogIn, MapPin, Clock, Phone, PackageSearch, Search, ArrowRight } from 'lucide-react'
 import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
 import { useTheme } from '@/components/ThemeProvider'
 
 const bgImages = [
@@ -17,13 +18,27 @@ const bgImages = [
 const features = [
   { icon: UtensilsCrossed, title: 'Réserver une table', desc: 'Choisissez votre salle et votre table sur un plan interactif', href: '/reservation', color: 'from-blue-500 to-blue-600' },
   { icon: ShoppingBag, title: 'Commander en ligne', desc: 'Parcourez notre carte et passez commande depuis chez vous', href: '/commande', color: 'from-orange-500 to-orange-600' },
-  { icon: PackageSearch, title: 'Suivre ma commande', desc: 'Suivez l\'état de votre commande en temps réel', href: '/suivi-commande', color: 'from-purple-500 to-purple-600' },
+  { icon: PackageSearch, title: 'Suivre ma commande', desc: 'Suivez l\'état de votre commande en temps réel', href: '#', color: 'from-purple-500 to-purple-600', action: 'tracking' },
   { icon: MapPin, title: 'Nous trouver', desc: 'Au cœur du quartier, venez profiter d\'une cuisine authentique', href: '#', color: 'from-green-500 to-green-600' },
 ]
 
 export default function Home() {
   const theme = useTheme()
   const [bgIndex, setBgIndex] = useState(0)
+  const [trackingEmail, setTrackingEmail] = useState('')
+  const [showTrackingForm, setShowTrackingForm] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (showTrackingForm && inputRef.current) inputRef.current.focus()
+  }, [showTrackingForm])
+
+  const handleTrackOrder = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (trackingEmail.trim()) {
+      window.location.href = `/suivi-commande?email=${encodeURIComponent(trackingEmail.trim())}`
+    }
+  }
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -92,11 +107,23 @@ export default function Home() {
                   <ShoppingBag size={20} /> Commander
                 </Button>
               </Link>
-              <Link href="/suivi-commande">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto text-base !px-8 !border-white/60 !text-white/90 hover:!bg-white hover:!text-[var(--primary)]">
+              {!showTrackingForm ? (
+                <button onClick={() => setShowTrackingForm(true)}
+                  className="w-full sm:w-auto text-base px-8 py-3 rounded-xl border-2 border-white/60 text-white/90 hover:bg-white hover:text-[var(--primary)] transition-all font-medium flex items-center justify-center gap-2">
                   <PackageSearch size={20} /> Suivre ma commande
-                </Button>
-              </Link>
+                </button>
+              ) : (
+                <form onSubmit={handleTrackOrder} className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl p-1">
+                  <input ref={inputRef} type="email" value={trackingEmail} onChange={e => setTrackingEmail(e.target.value)}
+                    placeholder="Votre email..." className="flex-1 px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:outline-none focus:ring-2 focus:ring-white/30 text-sm" />
+                  <button type="submit" disabled={!trackingEmail.trim()}
+                    className="px-4 py-2 rounded-lg bg-white text-[var(--primary)] font-medium text-sm hover:bg-white/90 transition-colors disabled:opacity-50 flex items-center gap-1">
+                    Suivre <ArrowRight size={16} />
+                  </button>
+                  <button type="button" onClick={() => { setShowTrackingForm(false); setTrackingEmail('') }}
+                    className="px-2 py-2 text-white/70 hover:text-white text-sm">✕</button>
+                </form>
+              )}
             </div>
           </motion.div>
         </div>
@@ -116,6 +143,17 @@ export default function Home() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {features.map((f, i) => (
               <motion.div key={f.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}>
+                {(f as any).action === 'tracking' ? (
+                  <button onClick={() => setShowTrackingForm(true)} className="block group w-full text-left">
+                    <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                      <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                        <f.icon size={26} className="text-white" />
+                      </div>
+                      <h4 className="text-lg font-bold mb-2 group-hover:text-[var(--primary)] transition-colors">{f.title}</h4>
+                      <p className="text-gray-500 text-sm leading-relaxed">{f.desc}</p>
+                    </div>
+                  </button>
+                ) : (
                 <Link href={f.href} className="block group">
                   <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                     <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
@@ -125,6 +163,7 @@ export default function Home() {
                     <p className="text-gray-500 text-sm leading-relaxed">{f.desc}</p>
                   </div>
                 </Link>
+                )}
               </motion.div>
             ))}
           </div>
@@ -154,8 +193,40 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Tracking email modal */}
+      <AnimatePresence>
+        {showTrackingForm && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => { setShowTrackingForm(false); setTrackingEmail('') }}>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+              className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="text-center mb-6">
+                <PackageSearch size={40} className="mx-auto text-[var(--primary)] mb-3" />
+                <h3 className="text-xl font-bold">Suivre ma commande</h3>
+                <p className="text-gray-500 text-sm mt-1">Entrez votre email pour voir l'état de votre commande</p>
+              </div>
+              <form onSubmit={handleTrackOrder} className="space-y-4">
+                <input type="email" value={trackingEmail} onChange={e => setTrackingEmail(e.target.value)}
+                  placeholder="votre@email.com" autoFocus
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-center text-lg" />
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => { setShowTrackingForm(false); setTrackingEmail('') }}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-gray-600 font-medium hover:bg-gray-50 transition-colors">
+                    Annuler
+                  </button>
+                  <button type="submit" disabled={!trackingEmail.trim()}
+                    className="flex-1 px-4 py-3 bg-[var(--primary)] text-white rounded-xl font-medium hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                    Suivre <ArrowRight size={18} />
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Mobile bottom nav */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 flex shadow-2xl">
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 flex shadow-2xl">
         {[
           { href: '/', icon: UtensilsCrossed, label: 'Accueil' },
           { href: '/reservation', icon: MapPin, label: 'Réserver' },
