@@ -108,10 +108,10 @@ export default function Home() {
                 </Button>
               </Link>
               {!showTrackingForm ? (
-                <button onClick={() => setShowTrackingForm(true)}
-                  className="w-full sm:w-auto text-sm sm:text-base px-6 sm:px-8 py-3 rounded-xl border-2 border-white/60 text-white/90 hover:bg-white hover:text-[var(--primary)] transition-all font-medium flex items-center justify-center gap-2">
-                  <PackageSearch size={18} /> Suivre ma commande
-                </button>
+                <Button variant="outline" size="lg" onClick={() => setShowTrackingForm(true)}
+                  className="w-full sm:w-auto text-base !px-8 !border-white/60 !text-white/90 hover:!bg-white hover:!text-[var(--primary)]">
+                  <PackageSearch size={20} /> Suivre ma commande
+                </Button>
               ) : (
                 <form onSubmit={handleTrackOrder} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl p-2 sm:p-1">
                   <input ref={inputRef} type="email" value={trackingEmail} onChange={e => setTrackingEmail(e.target.value)}
