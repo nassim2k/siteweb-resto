@@ -201,95 +201,92 @@ export default function SuiviContent({ initialEmail }: { initialEmail: string })
         )}
 
         {activeOrder ? (
-          <div className="max-w-lg mx-auto">
-            <div className="relative rounded-2xl overflow-hidden mb-6"
-              style={{
-                backgroundImage: `url(${bgImage})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                minHeight: '400px',
-              }}>
-              <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/70" />
-              <div className="relative z-10 p-6 flex flex-col gap-4">
-                <div className="text-white">
-                  <p className="text-xl font-bold">{activeOrder.customer_name}</p>
-                  <p className="text-sm opacity-80">
-                    {activeOrder.order_type === 'livraison' ? 'Livraison' : 'Sur place'}
-                    {activeOrder.address && ` — ${activeOrder.address}`}
-                  </p>
-                </div>
+          <div className="relative w-full min-h-screen"
+            style={{
+              backgroundImage: `url(${bgImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/70" />
+            <div className="relative z-10 container mx-auto px-4 py-8 max-w-2xl flex flex-col gap-4">
+              <div className="text-white">
+                <p className="text-xl font-bold">{activeOrder.customer_name}</p>
+                <p className="text-sm opacity-80">
+                  {activeOrder.order_type === 'livraison' ? 'Livraison' : 'Sur place'}
+                  {activeOrder.address && ` — ${activeOrder.address}`}
+                </p>
+              </div>
 
-                <div className="bg-white/80 backdrop-blur-md rounded-xl p-5 shadow-lg">
-                  <h3 className="font-bold mb-4 flex items-center gap-2">
-                    <ShoppingBag size={18} /> Détails de la commande
-                  </h3>
-                  <div className="space-y-3">
-                    {orderItems.map((item, i) => (
-                      <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                        <div className="flex-1">
-                          <p className="font-medium">{item.product_name}</p>
-                          <p className="text-sm text-gray-500">x{item.quantity}</p>
-                        </div>
-                        <p className="font-medium">{formatPrice(item.unit_price * item.quantity)}</p>
+              <div className="bg-white/60 backdrop-blur-md rounded-xl p-5 shadow-lg">
+                <h3 className="font-bold mb-4 flex items-center gap-2">
+                  <ShoppingBag size={18} /> Détails de la commande
+                </h3>
+                <div className="space-y-3">
+                  {orderItems.map((item, i) => (
+                    <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                      <div className="flex-1">
+                        <p className="font-medium">{item.product_name}</p>
+                        <p className="text-sm text-gray-500">x{item.quantity}</p>
                       </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between font-bold mt-4 pt-4 border-t border-gray-200">
-                    <span>Total</span>
-                    <span className="text-[var(--primary)]">{formatPrice(activeOrder.total)}</span>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-3">
-                    Commandé le {formatDate(activeOrder.created_at)} à {formatTime(activeOrder.created_at)}
-                  </p>
-                  {currentStatus === 'delivered' && activeOrder.delivery_status !== 'received' && (
-                    <Button onClick={handleReceived} className="w-full mt-4">
-                      <ThumbsUp size={18} /> Bien reçu
-                    </Button>
-                  )}
-                  {currentStatus === 'delivered' && activeOrder.delivery_status === 'received' && (
-                    <p className="text-green-600 text-sm font-medium text-center mt-4">✓ Commande bien reçue</p>
-                  )}
+                      <p className="font-medium">{formatPrice(item.unit_price * item.quantity)}</p>
+                    </div>
+                  ))}
                 </div>
-
-                <div className="bg-white/80 backdrop-blur-md rounded-xl p-5 shadow-lg">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm font-medium">Progression</span>
-                    <span className="text-sm font-bold text-[var(--primary)]">{progress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                      className="bg-[var(--primary)] h-2.5 rounded-full" />
-                  </div>
+                <div className="flex justify-between font-bold mt-4 pt-4 border-t border-gray-200">
+                  <span>Total</span>
+                  <span className="text-[var(--primary)]">{formatPrice(activeOrder.total)}</span>
                 </div>
+                <p className="text-xs text-gray-400 mt-3">
+                  Commandé le {formatDate(activeOrder.created_at)} à {formatTime(activeOrder.created_at)}
+                </p>
+                {currentStatus === 'delivered' && activeOrder.delivery_status !== 'received' && (
+                  <Button onClick={handleReceived} className="w-full mt-4">
+                    <ThumbsUp size={18} /> Bien reçu
+                  </Button>
+                )}
+                {currentStatus === 'delivered' && activeOrder.delivery_status === 'received' && (
+                  <p className="text-green-600 text-sm font-medium text-center mt-4">✓ Commande bien reçue</p>
+                )}
+              </div>
 
-                <div className="bg-white/80 backdrop-blur-md rounded-xl p-5 shadow-lg">
-                  <div className="relative">
-                    {statusSteps.map((step, i) => {
-                      const isPast = stepIndex >= i
-                      const isCurrent = stepIndex === i
-                      const isDelivery = activeOrder.order_type === 'livraison'
-                      if (step.key === 'in_transit' && !isDelivery) return null
-                      return (
-                        <div key={step.key} className="flex items-start gap-4 pb-6 last:pb-0">
-                          <div className="flex flex-col items-center">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              isPast ? 'bg-green-500 text-white' : isCurrent ? 'bg-[var(--primary)] text-white ring-4 ring-[var(--primary)]/20' : 'bg-gray-200 text-gray-400'
-                            }`}>
-                              {isPast ? <Check size={16} /> : <step.icon size={16} />}
-                            </div>
-                            {i < statusSteps.length - 1 && (
-                              <div className={`w-0.5 h-8 ${isPast && i < statusSteps.length - 1 ? 'bg-green-500' : 'bg-gray-200'}`} />
-                            )}
+              <div className="bg-white/60 backdrop-blur-md rounded-xl p-5 shadow-lg">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-medium">Progression</span>
+                  <span className="text-sm font-bold text-[var(--primary)]">{progress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                    className="bg-[var(--primary)] h-2.5 rounded-full" />
+                </div>
+              </div>
+
+              <div className="bg-white/60 backdrop-blur-md rounded-xl p-5 shadow-lg">
+                <div className="relative">
+                  {statusSteps.map((step, i) => {
+                    const isPast = stepIndex >= i
+                    const isCurrent = stepIndex === i
+                    const isDelivery = activeOrder.order_type === 'livraison'
+                    if (step.key === 'in_transit' && !isDelivery) return null
+                    return (
+                      <div key={step.key} className="flex items-start gap-4 pb-6 last:pb-0">
+                        <div className="flex flex-col items-center">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            isPast ? 'bg-green-500 text-white' : isCurrent ? 'bg-[var(--primary)] text-white ring-4 ring-[var(--primary)]/20' : 'bg-gray-200 text-gray-400'
+                          }`}>
+                            {isPast ? <Check size={16} /> : <step.icon size={16} />}
                           </div>
-                          <div className="pt-1">
-                            <p className={`font-medium ${isPast || isCurrent ? 'text-gray-900' : 'text-gray-400'}`}>{step.label}</p>
-                            {isCurrent && <p className="text-sm text-gray-500">En cours...</p>}
-                          </div>
+                          {i < statusSteps.length - 1 && (
+                            <div className={`w-0.5 h-8 ${isPast && i < statusSteps.length - 1 ? 'bg-green-500' : 'bg-gray-200'}`} />
+                          )}
                         </div>
-                      )
-                    })}
-                  </div>
+                        <div className="pt-1">
+                          <p className={`font-medium ${isPast || isCurrent ? 'text-gray-900' : 'text-gray-400'}`}>{step.label}</p>
+                          {isCurrent && <p className="text-sm text-gray-500">En cours...</p>}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             </div>
