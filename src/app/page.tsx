@@ -92,6 +92,11 @@ export default function Home() {
                   <ShoppingBag size={20} /> Commander
                 </Button>
               </Link>
+              <Link href="/suivi-commande">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto text-base !px-8 !border-white/60 !text-white/90 hover:!bg-white hover:!text-[var(--primary)]">
+                  <PackageSearch size={20} /> Suivre ma commande
+                </Button>
+              </Link>
             </div>
           </motion.div>
         </div>
