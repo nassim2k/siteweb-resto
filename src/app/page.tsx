@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UtensilsCrossed, ShoppingBag, LogIn, MapPin, Clock, Phone, PackageSearch, Search, ArrowRight } from 'lucide-react'
 import Button from '@/components/ui/Button'
@@ -26,6 +26,9 @@ export default function Home() {
   const theme = useTheme()
   const bgImages = theme?.hero_images?.length ? theme.hero_images : defaultBgImages
   const [bgIndex, setBgIndex] = useState(0)
+  const [fadeUrl, setFadeUrl] = useState<string | null>(null)
+  const bgIndexRef = useRef(0)
+  const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [trackingEmail, setTrackingEmail] = useState('')
   const [showTrackingForm, setShowTrackingForm] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -41,13 +44,28 @@ export default function Home() {
     }
   }
 
-  useEffect(() => {
-    setBgIndex(0)
-    const timer = setInterval(() => {
-      setBgIndex(i => (i + 1) % bgImages.length)
-    }, 5000)
-    return () => clearInterval(timer)
+  const goToImage = useCallback((i: number) => {
+    if (i === bgIndexRef.current) return
+    setFadeUrl(bgImages[bgIndexRef.current])
+    bgIndexRef.current = i
+    setBgIndex(i)
+    if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current)
+    fadeTimeoutRef.current = setTimeout(() => setFadeUrl(null), 2000)
   }, [bgImages])
+
+  useEffect(() => {
+    bgIndexRef.current = 0
+    setBgIndex(0)
+    setFadeUrl(null)
+    if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current)
+    const timer = setInterval(() => {
+      goToImage((bgIndexRef.current + 1) % bgImages.length)
+    }, 120000)
+    return () => {
+      clearInterval(timer)
+      if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current)
+    }
+  }, [bgImages, goToImage])
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -74,11 +92,21 @@ export default function Home() {
 
       {/* Hero with animated background */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {fadeUrl && (
+          <motion.div
+            key={`fade-${fadeUrl}`}
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 1.5, ease: 'easeInOut' }}
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${fadeUrl})` }}
+          />
+        )}
         <motion.div
-          key={bgIndex}
-          initial={{ opacity: 0 }}
+          key={`bg-${bgIndex}`}
+          initial={{ opacity: fadeUrl ? 0 : 1 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1.2, ease: 'easeInOut' }}
+          transition={{ duration: 1.5, ease: 'easeInOut' }}
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${bgImages[bgIndex]})` }}
         />
@@ -131,7 +159,7 @@ export default function Home() {
         {/* Dots indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex gap-2">
           {bgImages.map((_, i) => (
-            <button key={i} onClick={() => setBgIndex(i)}
+            <button key={i} onClick={() => goToImage(i)}
               className={`w-2 h-2 rounded-full transition-all duration-500 ${i === bgIndex ? 'bg-white w-6' : 'bg-white/50'}`} />
           ))}
         </div>
