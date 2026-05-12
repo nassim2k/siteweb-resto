@@ -60,7 +60,7 @@ export default function Home() {
     if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current)
     const timer = setInterval(() => {
       goToImage((bgIndexRef.current + 1) % bgImages.length)
-    }, 120000)
+    }, 20000)
     return () => {
       clearInterval(timer)
       if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current)
