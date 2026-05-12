@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
     const { error } = await supabase
       .from('orders')
-      .update({ delivery_status: 'received', updated_at: new Date().toISOString() })
+      .update({ status: 'delivered', delivery_status: 'received', updated_at: new Date().toISOString() })
       .eq('id', orderId)
 
     if (error) throw error

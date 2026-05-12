@@ -151,7 +151,7 @@ export default function SuiviContent({ initialEmail }: { initialEmail: string })
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: selectedOrderId }),
     })
     setOrderStatus('delivered')
-    setOrders(prev => prev.map(o => o.id === selectedOrderId ? { ...o, delivery_status: 'received' } : o))
+    setOrders(prev => prev.map(o => o.id === selectedOrderId ? { ...o, status: 'delivered', delivery_status: 'received' } : o))
   }
 
   return (
@@ -239,6 +239,11 @@ export default function SuiviContent({ initialEmail }: { initialEmail: string })
                 <p className="text-xs text-gray-400 mt-3">
                   Commandé le {formatDate(activeOrder.created_at)} à {formatTime(activeOrder.created_at)}
                 </p>
+                {currentStatus === 'in_transit' && activeOrder.order_type === 'livraison' && (
+                  <Button onClick={handleReceived} className="w-full mt-4">
+                    <ThumbsUp size={18} /> Livré
+                  </Button>
+                )}
                 {currentStatus === 'delivered' && activeOrder.delivery_status !== 'received' && (
                   <Button onClick={handleReceived} className="w-full mt-4">
                     <ThumbsUp size={18} /> Bien reçu
