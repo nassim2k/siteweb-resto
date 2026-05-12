@@ -9,10 +9,10 @@ import { UtensilsCrossed, Beef, Pizza, Coffee, Palette, Sparkles } from 'lucide-
 
 const presets: Record<string, { label: string; icon: any; primary: string; secondary: string; accent: string; desc: string }> = {
   actuel: { label: 'Actuel', icon: Sparkles, primary: '#1e3a5f', secondary: '#f0c040', accent: '#e74c3c', desc: 'Thème par défaut' },
-  gastronomie: { label: 'Gastronomie', icon: UtensilsCrossed, primary: '#1a1a2e', secondary: '#c9a96e', accent: '#8b1a1a', desc: 'Élégant, tons sombres et or' },
-  bistronomie: { label: 'Bistronomie', icon: Beef, primary: '#2d0a0a', secondary: '#e63946', accent: '#1d1d1d', desc: 'Style Hippopotamus, rouge et noir' },
-  streetfood: { label: 'Streetfood', icon: Coffee, primary: '#da291c', secondary: '#ffc72c', accent: '#00704a', desc: 'Style McDonald\'s / Starbucks' },
-  pizza: { label: 'Pizza', icon: Pizza, primary: '#0b3d91', secondary: '#e31837', accent: '#f5f5f5', desc: 'Style Domino\'s, bleu et rouge' },
+  gastronomie: { label: 'Gastronomie', icon: UtensilsCrossed, primary: '#0f1923', secondary: '#c8a45c', accent: '#6b1d2a', desc: 'Navy profond, or vieilli, bordeaux' },
+  bistronomie: { label: 'Bistronomie', icon: Beef, primary: '#1a0a0a', secondary: '#b83227', accent: '#2d2d2d', desc: 'Noir rougeâtre, rouge profond, anthracite' },
+  streetfood: { label: 'Streetfood', icon: Coffee, primary: '#2c1810', secondary: '#c4922a', accent: '#1a3c2a', desc: 'Brun foncé, or chaud, vert forêt' },
+  pizza: { label: 'Pizza', icon: Pizza, primary: '#1a1f2e', secondary: '#c0392b', accent: '#e8d5b7', desc: 'Ardoise, rouge italien, crème' },
 }
 
 export default function AdminTheme() {
@@ -37,7 +37,7 @@ export default function AdminTheme() {
     if (key !== 'actuel' && key !== 'personnalise') {
       setLoadingBg(key)
       try {
-        const res = await fetch(`/api/theme-images?theme=${key}&count=4`)
+        const res = await fetch(`/api/theme-images?theme=${key}`)
         const data = await res.json()
         if (data.urls?.length) setForm(f => ({ ...f, background_image: data.urls[0], hero_images: data.urls }))
       } catch {}

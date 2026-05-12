@@ -73,18 +73,15 @@ export default function Home() {
       </header>
 
       {/* Hero with animated background */}
-      <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={bgIndex}
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.5, ease: 'easeInOut' }}
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${bgImages[bgIndex]})` }}
-          />
-        </AnimatePresence>
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <motion.div
+          key={bgIndex}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, ease: 'easeInOut' }}
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${bgImages[bgIndex]})` }}
+        />
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
