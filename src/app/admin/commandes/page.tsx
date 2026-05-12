@@ -2,19 +2,20 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Order, Room, Table } from '@/types'
+import { Order } from '@/types'
 import { formatPrice, formatDate, formatTime } from '@/lib/utils'
 import Button from '@/components/ui/Button'
-import { Check, X, Clock, CookingPot } from 'lucide-react'
+import { Check, X, Clock, CookingPot, Package, Bike, UtensilsCrossed } from 'lucide-react'
 
 export default function AdminCommandes() {
   const supabase = createClient()
   const [orders, setOrders] = useState<(Order & { table_name?: string })[]>([])
-  const [tab, setTab] = useState<'pending' | 'confirmed' | 'all'>('pending')
+  const [tab, setTab] = useState<'pending' | 'confirmed' | 'preparing' | 'ready' | 'all'>('pending')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'sur_place' | 'livraison'>('all')
 
   useEffect(() => {
     fetchOrders()
-    const channel = supabase.channel('orders-changes')
+    const channel = supabase.channel('orders-changes-admin')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders())
       .subscribe()
     return () => { supabase.removeChannel(channel) }
@@ -35,41 +36,63 @@ export default function AdminCommandes() {
   }
 
   const updateStatus = async (id: string, status: string) => {
-    await supabase.from('orders').update({ status }).eq('id', id)
+    await supabase.from('orders').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
     fetchOrders()
   }
 
-  const filtered = tab === 'all' ? orders : orders.filter(o => o.status === tab)
+  const filtered = orders.filter(o => {
+    if (tab === 'all') return true
+    return o.status === tab
+  }).filter(o => {
+    if (typeFilter === 'all') return true
+    return o.order_type === typeFilter
+  })
 
   const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
     pending: { label: 'En attente', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
     confirmed: { label: 'Confirmée', color: 'bg-blue-100 text-blue-800', icon: Check },
-    preparing: { label: 'En préparation', color: 'bg-purple-100 text-purple-800', icon: CookingPot },
-    served: { label: 'Servie', color: 'bg-green-100 text-green-800', icon: Check },
+    preparing: { label: 'En cuisine', color: 'bg-purple-100 text-purple-800', icon: CookingPot },
+    ready: { label: 'Prête', color: 'bg-green-100 text-green-800', icon: Package },
+    in_transit: { label: 'En route', color: 'bg-orange-100 text-orange-800', icon: Bike },
+    delivered: { label: 'Livrée', color: 'bg-green-100 text-green-800', icon: Check },
     cancelled: { label: 'Annulée', color: 'bg-red-100 text-red-800', icon: X },
   }
+
+  const tabs = [
+    { key: 'pending' as const, label: 'En attente' },
+    { key: 'confirmed' as const, label: 'Confirmées' },
+    { key: 'preparing' as const, label: 'En cuisine' },
+    { key: 'ready' as const, label: 'Prêtes' },
+    { key: 'all' as const, label: 'Toutes' },
+  ]
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Commandes</h1>
-
-      <div className="flex gap-2 mb-6">
-        {['pending', 'confirmed', 'all'].map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t as any)}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {tabs.map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === t ? 'bg-[var(--primary)] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            {t === 'pending' ? 'En attente' : t === 'confirmed' ? 'Confirmées' : 'Toutes'}
+              tab === t.key ? 'bg-[var(--primary)] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+            }`}>
+            {t.label}
           </button>
         ))}
       </div>
-
+      <div className="flex gap-2 mb-6">
+        {(['all', 'sur_place', 'livraison'] as const).map(t => (
+          <button key={t} onClick={() => setTypeFilter(t)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              typeFilter === t ? 'bg-gray-800 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'
+            }`}>
+            {t === 'all' ? 'Tous' : t === 'sur_place' ? 'Sur place' : 'Livraison'}
+          </button>
+        ))}
+      </div>
       <div className="space-y-4">
         {filtered.map(order => {
           const StatusIcon = statusConfig[order.status]?.icon || Clock
+          const isDelivery = order.order_type === 'livraison'
           return (
             <div key={order.id} className="bg-white rounded-xl p-6 shadow-sm">
               <div className="flex items-start justify-between mb-4">
@@ -80,39 +103,60 @@ export default function AdminCommandes() {
                       <StatusIcon size={12} className="inline mr-1" />
                       {statusConfig[order.status]?.label}
                     </span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isDelivery ? 'bg-orange-50 text-orange-700' : 'bg-blue-50 text-blue-700'}`}>
+                      {isDelivery ? <Bike size={12} className="inline mr-1" /> : <UtensilsCrossed size={12} className="inline mr-1" />}
+                      {isDelivery ? 'Livraison' : 'Sur place'}
+                    </span>
                   </div>
                   <p className="text-sm text-gray-500">{order.customer_email}</p>
                   {order.table_name && <p className="text-sm text-gray-500">Table: {order.table_name}</p>}
+                  {order.address && <p className="text-sm text-gray-500">Adresse: {order.address}</p>}
                   <p className="text-xs text-gray-400">{formatDate(order.created_at)} à {formatTime(order.created_at)}</p>
                 </div>
                 <p className="text-xl font-bold text-[var(--primary)]">{formatPrice(order.total)}</p>
               </div>
-
-              {order.status === 'pending' && (
-                <div className="flex gap-2">
-                  <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'confirmed')}>
-                    <Check size={16} /> Confirmer
+              <div className="flex flex-wrap gap-2">
+                {order.status === 'pending' && (
+                  <>
+                    <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'confirmed')}>
+                      <Check size={16} /> Confirmer
+                    </Button>
+                    <Button size="sm" variant="danger" onClick={() => updateStatus(order.id, 'cancelled')}>
+                      <X size={16} /> Annuler
+                    </Button>
+                  </>
+                )}
+                {order.status === 'confirmed' && (
+                  <>
+                    <Button size="sm" variant="secondary" onClick={() => updateStatus(order.id, 'preparing')}>
+                      <CookingPot size={16} /> En cuisine
+                    </Button>
+                    <Button size="sm" variant="danger" onClick={() => updateStatus(order.id, 'cancelled')}>
+                      <X size={16} /> Annuler
+                    </Button>
+                  </>
+                )}
+                {order.status === 'preparing' && (
+                  <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'ready')}>
+                    <Package size={16} /> Prête
                   </Button>
-                  <Button size="sm" variant="danger" onClick={() => updateStatus(order.id, 'cancelled')}>
-                    <X size={16} /> Annuler
+                )}
+                {order.status === 'ready' && isDelivery && (
+                  <Button size="sm" variant="secondary" onClick={() => updateStatus(order.id, 'in_transit')}>
+                    <Bike size={16} /> En route
                   </Button>
-                </div>
-              )}
-              {order.status === 'confirmed' && (
-                <div className="flex gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => updateStatus(order.id, 'preparing')}>
-                    <CookingPot size={16} /> En préparation
+                )}
+                {order.status === 'ready' && !isDelivery && (
+                  <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'delivered')}>
+                    <Check size={16} /> Servi
                   </Button>
-                  <Button size="sm" variant="danger" onClick={() => updateStatus(order.id, 'cancelled')}>
-                    <X size={16} /> Annuler
+                )}
+                {order.status === 'in_transit' && (
+                  <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'delivered')}>
+                    <Check size={16} /> Livré
                   </Button>
-                </div>
-              )}
-              {order.status === 'preparing' && (
-                <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'served')}>
-                  <Check size={16} /> Servi
-                </Button>
-              )}
+                )}
+              </div>
             </div>
           )
         })}

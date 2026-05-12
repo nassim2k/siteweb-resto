@@ -17,6 +17,7 @@ export default function AdminAttributs() {
   const [defModal, setDefModal] = useState(false)
   const [editDef, setEditDef] = useState<AttributeDefinition | null>(null)
   const [defName, setDefName] = useState('')
+  const [defType, setDefType] = useState<'select' | 'text'>('select')
   const [optModal, setOptModal] = useState(false)
   const [editOpt, setEditOpt] = useState<AttributeOption | null>(null)
   const [optForm, setOptForm] = useState({ attribute_id: '', value: '', price_modifier: 0 })
@@ -35,15 +36,15 @@ export default function AdminAttributs() {
     setDefinitions(defsWithOpts)
   }
 
-  const openCreateDef = () => { setEditDef(null); setDefName(''); setDefModal(true) }
-  const openEditDef = (d: AttributeDefinition) => { setEditDef(d); setDefName(d.name); setDefModal(true) }
+  const openCreateDef = () => { setEditDef(null); setDefName(''); setDefType('select'); setDefModal(true) }
+  const openEditDef = (d: AttributeDefinition) => { setEditDef(d); setDefName(d.name); setDefType(d.type); setDefModal(true) }
 
   const saveDef = async () => {
     setLoading(true)
     if (editDef) {
-      await supabase.from('attribute_definitions').update({ name: defName }).eq('id', editDef.id)
+      await supabase.from('attribute_definitions').update({ name: defName, type: defType }).eq('id', editDef.id)
     } else {
-      await supabase.from('attribute_definitions').insert({ name: defName })
+      await supabase.from('attribute_definitions').insert({ name: defName, type: defType })
     }
     setDefModal(false); setLoading(false); fetchDefs(); toast(editDef ? 'Attribut modifié' : 'Attribut créé')
   }
@@ -89,16 +90,18 @@ export default function AdminAttributs() {
           <div key={def.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50" onClick={() => setExpanded(expanded === def.id ? null : def.id)}>
               <div className="flex items-center gap-3">
-                {expanded === def.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                {def.type === 'select' ? (expanded === def.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />) : <div className="w-[18px]" />}
                 <span className="font-bold">{def.name}</span>
-                <span className="text-sm text-gray-400">({def.options.length} options)</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${def.type === 'text' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                  {def.type === 'text' ? 'Texte' : `Sélection (${def.options.length})`}
+                </span>
               </div>
               <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                 <Button variant="ghost" size="sm" onClick={() => openEditDef(def)}><Pencil size={15} /></Button>
                 <Button variant="ghost" size="sm" onClick={() => deleteDef(def.id)}><Trash2 size={15} className="text-red-500" /></Button>
               </div>
             </div>
-            {expanded === def.id && (
+            {expanded === def.id && def.type === 'select' && (
               <div className="border-t px-4 py-3 space-y-2">
                 {def.options.map(opt => (
                   <div key={opt.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
@@ -116,6 +119,11 @@ export default function AdminAttributs() {
                 <Button size="sm" variant="ghost" onClick={() => openCreateOpt(def.id)}><Plus size={14} /> Option</Button>
               </div>
             )}
+            {expanded === def.id && def.type === 'text' && (
+              <div className="border-t px-4 py-6 text-center text-sm text-gray-400">
+                Attribut de type texte — configurable dans chaque produit
+              </div>
+            )}
           </div>
         ))}
         {definitions.length === 0 && <p className="text-gray-400 text-center py-12">Aucun attribut défini</p>}
@@ -124,6 +132,25 @@ export default function AdminAttributs() {
       <Modal isOpen={defModal} onClose={() => setDefModal(false)} title={editDef ? 'Modifier' : 'Nouvel attribut'}>
         <div className="space-y-4">
           <Input label="Nom de l'attribut" value={defName} onChange={e => setDefName(e.target.value)} placeholder="ex: Taille, Cuisson, Supplément" />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+            <div className="flex gap-3">
+              <label className="flex items-center gap-2 cursor-pointer p-3 border rounded-lg flex-1 has-[:checked]:border-[var(--primary)] has-[:checked]:bg-[var(--primary)]/5">
+                <input type="radio" name="defType" value="select" checked={defType === 'select'} onChange={() => setDefType('select')} className="w-4 h-4" />
+                <div>
+                  <p className="font-medium text-sm">Sélection</p>
+                  <p className="text-xs text-gray-500">Options prédéfinies</p>
+                </div>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer p-3 border rounded-lg flex-1 has-[:checked]:border-[var(--primary)] has-[:checked]:bg-[var(--primary)]/5">
+                <input type="radio" name="defType" value="text" checked={defType === 'text'} onChange={() => setDefType('text')} className="w-4 h-4" />
+                <div>
+                  <p className="font-medium text-sm">Texte</p>
+                  <p className="text-xs text-gray-500">Zone de texte libre</p>
+                </div>
+              </label>
+            </div>
+          </div>
           <Button onClick={saveDef} disabled={loading || !defName} className="w-full">Sauvegarder</Button>
         </div>
       </Modal>

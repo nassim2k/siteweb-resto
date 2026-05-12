@@ -5,7 +5,6 @@ import { motion } from 'framer-motion'
 import { Table } from '@/types'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
-import { createClient } from '@/lib/supabase/client'
 import { generateCode } from '@/lib/utils'
 
 interface FormulaireReservationProps {
@@ -14,7 +13,6 @@ interface FormulaireReservationProps {
 }
 
 export default function FormulaireReservation({ table, onSuccess }: FormulaireReservationProps) {
-  const supabase = createClient()
   const [step, setStep] = useState<'form' | 'code'>('form')
   const [code, setCode] = useState('')
   const [generatedCode, setGeneratedCode] = useState('')
@@ -73,22 +71,21 @@ export default function FormulaireReservation({ table, onSuccess }: FormulaireRe
     }
 
     setConfirming(true)
-    await supabase.from('reservations').insert({
-      table_id: table.id,
-      customer_name: form.name,
-      customer_email: form.email,
-      customer_phone: form.phone,
-      reservation_date: form.date,
-      reservation_time: form.time,
-      guest_count: form.guests,
-      confirmation_code: code,
-      status: 'confirmed',
-    })
 
-    await supabase
-      .from('tables_resto')
-      .update({ status: 'occupied' })
-      .eq('id', table.id)
+    await fetch('/api/confirm-reservation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tableId: table.id,
+        customerName: form.name,
+        customerEmail: form.email,
+        customerPhone: form.phone,
+        reservationDate: form.date,
+        reservationTime: form.time,
+        guestCount: form.guests,
+        confirmationCode: code,
+      }),
+    })
 
     setConfirming(false)
     onSuccess()

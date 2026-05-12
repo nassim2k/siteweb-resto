@@ -9,6 +9,7 @@ import Input from '@/components/ui/Input'
 
 interface ValidationEmailProps {
   email: string
+  orderId?: string
   orderData: {
     customer_name: string
     customer_email: string
@@ -18,7 +19,7 @@ interface ValidationEmailProps {
   onConfirmed: () => void
 }
 
-export default function ValidationEmail({ email, orderData, onConfirmed }: ValidationEmailProps) {
+export default function ValidationEmail({ email, orderId, orderData, onConfirmed }: ValidationEmailProps) {
   const [step, setStep] = useState<'send' | 'code'>('send')
   const [code, setCode] = useState('')
   const [generatedCode, setGeneratedCode] = useState('')
@@ -47,11 +48,24 @@ export default function ValidationEmail({ email, orderData, onConfirmed }: Valid
     setSending(false)
   }
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (code !== generatedCode) {
       setError('Code incorrect')
       return
     }
+
+    if (orderId) {
+      try {
+        await fetch('/api/confirm-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId }),
+        })
+      } catch {
+        console.warn('Erreur lors de la confirmation côté serveur')
+      }
+    }
+
     onConfirmed()
   }
 

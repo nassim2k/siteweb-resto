@@ -27,6 +27,7 @@ export default function AdminCatalogue() {
   const [loading, setLoading] = useState(false)
   const [allAttributes, setAllAttributes] = useState<AttributeDefinition[]>([])
   const [selectedAttrIds, setSelectedAttrIds] = useState<string[]>([])
+  const [attrTextValues, setAttrTextValues] = useState<Record<string, string>>({})
 
   useEffect(() => {
     supabase.from('product_families').select('*').order('sort_order').then(({ data }) => {
@@ -85,6 +86,7 @@ export default function AdminCatalogue() {
     setEditProduct(null)
     setProductForm({ family_id: activeFamily || '', name: '', description: '', price: 0, image_url: '' })
     setSelectedAttrIds([])
+    setAttrTextValues({})
     await fetchAttributes()
     setProductModal(true)
   }
@@ -93,8 +95,11 @@ export default function AdminCatalogue() {
     setEditProduct(p)
     setProductForm({ family_id: p.family_id, name: p.name, description: p.description || '', price: p.price, image_url: p.image_url || '' })
     await fetchAttributes()
-    const { data } = await supabase.from('product_attributes').select('attribute_id').eq('product_id', p.id)
+    const { data } = await supabase.from('product_attributes').select('attribute_id, value').eq('product_id', p.id)
     setSelectedAttrIds(data ? data.map(a => a.attribute_id) : [])
+    const textVals: Record<string, string> = {}
+    if (data) data.forEach(a => { if (a.value) textVals[a.attribute_id] = a.value })
+    setAttrTextValues(textVals)
     setProductModal(true)
   }
 
@@ -113,7 +118,13 @@ export default function AdminCatalogue() {
     if (productId) {
       await supabase.from('product_attributes').delete().eq('product_id', productId)
       if (selectedAttrIds.length > 0) {
-        await supabase.from('product_attributes').insert(selectedAttrIds.map(aid => ({ product_id: productId, attribute_id: aid })))
+        await supabase.from('product_attributes').insert(
+          selectedAttrIds.map(aid => ({
+            product_id: productId,
+            attribute_id: aid,
+            value: attrTextValues[aid] || null,
+          }))
+        )
       }
     }
     setProductModal(false)
@@ -221,12 +232,31 @@ export default function AdminCatalogue() {
           {allAttributes.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Attributs</label>
-              <div className="space-y-1 max-h-40 overflow-y-auto">
+              <div className="space-y-2 max-h-60 overflow-y-auto">
                 {allAttributes.map(attr => (
-                  <label key={attr.id} className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
-                    <input type="checkbox" checked={selectedAttrIds.includes(attr.id)} onChange={() => toggleAttr(attr.id)} className="w-4 h-4" />
-                    <span className="text-sm">{attr.name}</span>
-                  </label>
+                  <div key={attr.id}>
+                    <label className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
+                      <input type="checkbox" checked={selectedAttrIds.includes(attr.id)} onChange={() => {
+                        if (selectedAttrIds.includes(attr.id)) {
+                          setSelectedAttrIds(prev => prev.filter(a => a !== attr.id))
+                          const next = { ...attrTextValues }; delete next[attr.id]; setAttrTextValues(next)
+                        } else {
+                          setSelectedAttrIds(prev => [...prev, attr.id])
+                        }
+                      }} className="w-4 h-4" />
+                      <span className="text-sm">{attr.name}</span>
+                      {attr.type === 'text' && <span className="text-xs text-purple-600 ml-1">(texte)</span>}
+                    </label>
+                    {selectedAttrIds.includes(attr.id) && attr.type === 'text' && (
+                      <input
+                        type="text"
+                        value={attrTextValues[attr.id] || ''}
+                        onChange={e => setAttrTextValues(prev => ({ ...prev, [attr.id]: e.target.value }))}
+                        placeholder={`Valeur pour ${attr.name}`}
+                        className="ml-8 w-[calc(100%-2rem)] px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                      />
+                    )}
+                  </div>
                 ))}
               </div>
             </div>

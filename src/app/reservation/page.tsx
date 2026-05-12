@@ -3,21 +3,26 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Check } from 'lucide-react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Room, Table } from '@/types'
+import { useTheme } from '@/components/ThemeProvider'
 import SalleCard from '@/components/reservation/SalleCard'
 import PlanSalle from '@/components/reservation/PlanSalle'
 import FormulaireReservation from '@/components/reservation/FormulaireReservation'
+import DisponibilitesTimeline from '@/components/reservation/DisponibilitesTimeline'
 import Button from '@/components/ui/Button'
 
 export default function ReservationPage() {
   const supabase = createClient()
+  const theme = useTheme()
   const [rooms, setRooms] = useState<Room[]>([])
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [tables, setTables] = useState<Table[]>([])
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
   const [step, setStep] = useState<'rooms' | 'plan' | 'success'>('rooms')
   const [successMsg, setSuccessMsg] = useState('')
+  const [resDate, setResDate] = useState(new Date().toISOString().split('T')[0])
 
   useEffect(() => {
     supabase.from('rooms').select('*').eq('active', true).order('sort_order').then(({ data }) => {
@@ -45,26 +50,25 @@ export default function ReservationPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-[var(--primary)] text-white py-6">
-        <div className="container mx-auto px-6">
-          <div className="flex items-center gap-4">
-            {step !== 'rooms' && (
-              <button
-                onClick={() => { setStep('rooms'); setSelectedRoom(null); setSelectedTable(null) }}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <ArrowLeft size={20} />
-              </button>
+      <header className="bg-[var(--primary)] text-white">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {step !== 'rooms' ? (
+              <button onClick={() => { setStep('rooms'); setSelectedRoom(null); setSelectedTable(null) }}
+                className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"><ArrowLeft size={20} /></button>
+            ) : (
+              <Link href="/" className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"><ArrowLeft size={20} /></Link>
             )}
+            {theme?.logo_url && <img src={theme.logo_url} alt="" className="h-8 w-8 rounded-full object-cover" />}
             <div>
-              <h1 className="text-2xl font-bold">Réservation</h1>
-              <p className="text-white/70 text-sm">
+              <h1 className="text-lg font-bold">Réservation</h1>
+              <p className="text-white/60 text-xs">
                 {step === 'rooms' ? 'Choisissez votre salle' :
-                 step === 'plan' ? 'Sélectionnez votre table' :
-                 'Confirmation'}
+                 step === 'plan' ? 'Sélectionnez votre table' : 'Confirmation'}
               </p>
             </div>
           </div>
+          {theme?.site_name && <span className="text-white/40 text-sm hidden sm:block">{theme.site_name}</span>}
         </div>
       </header>
 
@@ -118,17 +122,22 @@ export default function ReservationPage() {
               className="grid grid-cols-1 lg:grid-cols-3 gap-8"
             >
               <div className="lg:col-span-2">
-                <h2 className="text-xl font-bold mb-4">
-                  {selectedRoom.name}
-                  {selectedRoom.description && (
-                    <span className="text-sm font-normal text-gray-500 ml-2">{selectedRoom.description}</span>
-                  )}
-                </h2>
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                  <h2 className="text-xl font-bold">
+                    {selectedRoom.name}
+                    {selectedRoom.description && <span className="text-sm font-normal text-gray-500 ml-2">{selectedRoom.description}</span>}
+                  </h2>
+                  <input type="date" value={resDate} onChange={e => setResDate(e.target.value)}
+                    className="text-sm border border-gray-300 rounded-lg px-3 py-1.5" />
+                </div>
                 <PlanSalle
                   tables={tables}
                   selectedTableId={selectedTable?.id || null}
                   onSelectTable={handleSelectTable}
                 />
+                {selectedTable && (
+                  <DisponibilitesTimeline tableId={selectedTable.id} date={resDate} />
+                )}
               </div>
               <div className="lg:col-span-1">
                 <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-8">

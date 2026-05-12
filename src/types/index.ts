@@ -81,10 +81,14 @@ export interface Order {
   customer_name: string
   customer_email: string
   total: number
-  status: 'pending' | 'confirmed' | 'preparing' | 'served' | 'cancelled'
+  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled'
+  order_type: 'sur_place' | 'livraison'
+  address: string | null
+  delivery_status: string
   confirmation_code: string | null
   confirmed: boolean
   created_at: string
+  updated_at: string
 }
 
 export interface OrderItem {
@@ -100,6 +104,7 @@ export interface OrderItem {
 export interface AttributeDefinition {
   id: string
   name: string
+  type: 'select' | 'text'
   sort_order: number
   created_at: string
 }
@@ -120,6 +125,7 @@ export interface ProductAttribute {
   id: string
   product_id: string
   attribute_id: string
+  value: string | null
 }
 
 export interface CartItem {
@@ -128,4 +134,5 @@ export interface CartItem {
   price: number
   quantity: number
   attributes?: { attribute_name: string; option_value: string; price_modifier: number }[]
+  text_values?: Record<string, string>
 }

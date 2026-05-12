@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Users, Table2, ShoppingBag, Package, UtensilsCrossed } from 'lucide-react'
+import { Users, Table2, ShoppingBag, Package, UtensilsCrossed, CheckCircle2, Bike } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { StatsCardSkeleton } from '@/components/ui/Skeleton'
 
@@ -12,12 +12,14 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const fetchStats = async () => {
-      const [rooms, tables, products, orders, reservations] = await Promise.all([
+      const [rooms, tables, products, orders, reservations, confirmedOrders, deliveries] = await Promise.all([
         supabase.from('rooms').select('*', { count: 'exact', head: true }),
         supabase.from('tables_resto').select('*', { count: 'exact', head: true }),
         supabase.from('products').select('*', { count: 'exact', head: true }),
         supabase.from('orders').select('*', { count: 'exact', head: true }),
         supabase.from('reservations').select('*', { count: 'exact', head: true }),
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'confirmed'),
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('order_type', 'livraison'),
       ])
       setStats({
         rooms: rooms.count || 0,
@@ -25,6 +27,8 @@ export default function AdminDashboard() {
         products: products.count || 0,
         orders: orders.count || 0,
         reservations: reservations.count || 0,
+        confirmedOrders: confirmedOrders.count || 0,
+        deliveries: deliveries.count || 0,
       })
     }
     fetchStats()
@@ -35,6 +39,8 @@ export default function AdminDashboard() {
     { label: 'Tables', value: stats?.tables, icon: Table2, color: 'bg-green-500' },
     { label: 'Produits', value: stats?.products, icon: Package, color: 'bg-purple-500' },
     { label: 'Commandes', value: stats?.orders, icon: ShoppingBag, color: 'bg-orange-500' },
+    { label: 'Confirmées', value: stats?.confirmedOrders, icon: CheckCircle2, color: 'bg-emerald-500' },
+    { label: 'Livraisons', value: stats?.deliveries, icon: Bike, color: 'bg-cyan-500' },
     { label: 'Réservations', value: stats?.reservations, icon: Users, color: 'bg-rose-500' },
   ]
 
