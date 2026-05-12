@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTheme } from '@/components/ThemeProvider'
 import Button from '@/components/ui/Button'
 import { formatPrice, formatDate, formatTime } from '@/lib/utils'
-import { Check, Package, Bike, CookingPot, ArrowLeft, Search, ShoppingBag } from 'lucide-react'
+import { Check, Package, Bike, CookingPot, ArrowLeft, Search, ShoppingBag, ThumbsUp } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
@@ -18,6 +18,7 @@ interface OrderWithItems {
   status: string
   order_type: string
   address: string | null
+  delivery_status: string
   created_at: string
   updated_at: string
   order_items: {
@@ -38,10 +39,10 @@ const statusSteps = [
 
 const statusImages: Record<string, string> = {
   confirmed: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80',
-  preparing: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80',
-  ready: 'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=800&q=80',
-  in_transit: 'https://images.unsplash.com/photo-1565704855-368568d78a5a?w=800&q=80',
-  delivered: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80',
+  preparing: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=800&q=80',
+  ready: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80',
+  in_transit: 'https://images.unsplash.com/photo-1580674285054-bed31e145f59?w=800&q=80',
+  delivered: 'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=800&q=80',
 }
 
 function getStepIndex(status: string): number {
@@ -122,6 +123,15 @@ function SuiviContent() {
       }
     } catch { setError('Erreur de connexion') }
     setLoading(false)
+  }
+
+  const handleReceived = async () => {
+    if (!selectedOrderId) return
+    await fetch('/api/confirm-received', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: selectedOrderId }),
+    })
+    setOrderStatus('delivered')
+    setOrders(prev => prev.map(o => o.id === selectedOrderId ? { ...o, delivery_status: 'received' } : o))
   }
 
   return (
@@ -247,6 +257,14 @@ function SuiviContent() {
               <p className="text-xs text-gray-400 mt-3">
                 Commandé le {formatDate(activeOrder.created_at)} à {formatTime(activeOrder.created_at)}
               </p>
+              {currentStatus === 'delivered' && activeOrder.delivery_status !== 'received' && (
+                <Button onClick={handleReceived} className="w-full mt-4">
+                  <ThumbsUp size={18} /> Bien reçu
+                </Button>
+              )}
+              {currentStatus === 'delivered' && activeOrder.delivery_status === 'received' && (
+                <p className="text-green-600 text-sm font-medium text-center mt-4">✓ Commande bien reçue</p>
+              )}
             </div>
           </div>
         ) : searchedEmail && orders.length === 0 && !loading && (
