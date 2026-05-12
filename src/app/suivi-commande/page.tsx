@@ -8,7 +8,6 @@ import Button from '@/components/ui/Button'
 import { formatPrice, formatDate, formatTime } from '@/lib/utils'
 import { Check, Package, Bike, CookingPot, ArrowLeft, Search, ShoppingBag, ThumbsUp } from 'lucide-react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
 
 interface OrderWithItems {
   id: string
@@ -60,12 +59,10 @@ function getProgress(status: string): number {
 }
 
 function SuiviContent() {
-  const searchParams = useSearchParams()
-  const initialEmail = searchParams.get('email') || ''
   const supabase = createClient()
   const theme = useTheme()
-  const [email, setEmail] = useState(initialEmail)
-  const [searchedEmail, setSearchedEmail] = useState(initialEmail)
+  const [email, setEmail] = useState('')
+  const [searchedEmail, setSearchedEmail] = useState('')
   const [orders, setOrders] = useState<OrderWithItems[]>([])
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -73,6 +70,7 @@ function SuiviContent() {
   const [orderStatus, setOrderStatus] = useState<string>('')
   const [orderItems, setOrderItems] = useState<OrderWithItems['order_items']>([])
   const channelRef = useRef<any>(null)
+  const searchedRef = useRef(false)
 
   const activeOrder = orders.find(o => o.id === selectedOrderId)
   const currentStatus = activeOrder?.status || ''
@@ -81,7 +79,15 @@ function SuiviContent() {
   const bgImage = statusImages[currentStatus] || statusImages.confirmed
 
   useEffect(() => {
-    if (initialEmail) handleSearch()
+    if (searchedRef.current) return
+    const params = new URLSearchParams(window.location.search)
+    const emailFromUrl = params.get('email')
+    if (emailFromUrl) {
+      setEmail(emailFromUrl)
+      setSearchedEmail(emailFromUrl)
+      searchedRef.current = true
+      handleSearchWithEmail(emailFromUrl)
+    }
   }, [])
 
   useEffect(() => {
@@ -125,23 +131,25 @@ function SuiviContent() {
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [selectedOrderId])
 
-  const handleSearch = async () => {
-    if (!email) return
+  const handleSearchWithEmail = async (searchEmail: string) => {
+    if (!searchEmail) return
     setLoading(true); setError('')
     try {
       const res = await fetch('/api/orders-by-email', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: searchEmail }),
       })
       const data = await res.json()
       if (data.error) { setError(data.error); setOrders([]) }
       else {
-        setOrders(data.orders || []); setSearchedEmail(email)
+        setOrders(data.orders || []); setSearchedEmail(searchEmail)
         if (data.orders?.length > 0) setSelectedOrderId(data.orders[0].id)
         else setSelectedOrderId(null)
       }
     } catch { setError('Erreur de connexion') }
     setLoading(false)
   }
+
+  const handleSearch = () => handleSearchWithEmail(email)
 
   const handleReceived = async () => {
     if (!selectedOrderId) return
@@ -297,13 +305,5 @@ function SuiviContent() {
 }
 
 export default function SuiviCommandePage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-400">Chargement...</p>
-      </div>
-    }>
-      <SuiviContent />
-    </Suspense>
-  )
+  return <SuiviContent />
 }
