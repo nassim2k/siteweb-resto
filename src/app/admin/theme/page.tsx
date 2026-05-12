@@ -28,6 +28,21 @@ export default function AdminTheme() {
   })
   const [saving, setSaving] = useState(false)
   const [activePreset, setActivePreset] = useState('personnalise')
+  const [loadingBg, setLoadingBg] = useState<string | null>(null)
+
+  const applyPreset = async (key: string, preset: typeof presets[string]) => {
+    setActivePreset(key)
+    setForm(f => ({ ...f, primary_color: preset.primary, secondary_color: preset.secondary, accent_color: preset.accent }))
+    if (key !== 'actuel' && key !== 'personnalise') {
+      setLoadingBg(key)
+      try {
+        const res = await fetch(`/api/theme-images?theme=${key}`)
+        const data = await res.json()
+        if (data.url) setForm(f => ({ ...f, background_image: data.url }))
+      } catch {}
+      setLoadingBg(null)
+    }
+  }
 
   useEffect(() => {
     supabase.from('themes').select('*').single().then(({ data }) => {
@@ -72,10 +87,7 @@ export default function AdminTheme() {
             const Icon = preset.icon
             const isActive = activePreset === key
             return (
-              <button key={key} onClick={() => {
-                setActivePreset(key)
-                setForm(f => ({ ...f, primary_color: preset.primary, secondary_color: preset.secondary, accent_color: preset.accent }))
-              }}
+              <button key={key} onClick={() => applyPreset(key, preset)}
                 className={`relative p-4 rounded-xl border-2 text-left transition-all ${
                   isActive ? 'border-[var(--primary)] bg-[var(--primary)]/5' : 'border-gray-200 hover:border-gray-300'
                 }`}>
