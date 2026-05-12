@@ -107,6 +107,24 @@ function SuiviContent() {
     return () => { if (channelRef.current) supabase.removeChannel(channelRef.current) }
   }, [selectedOrderId])
 
+  const pollRef = useRef<any>(null)
+  useEffect(() => {
+    if (!selectedOrderId) return
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch('/api/poll-order', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: selectedOrderId }),
+        })
+        const data = await res.json()
+        if (data.order) {
+          setOrderStatus(data.order.status)
+          setOrders(prev => prev.map(o => o.id === data.order.id ? { ...o, ...data.order } : o))
+        }
+      } catch {}
+    }, 3000)
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+  }, [selectedOrderId])
+
   const handleSearch = async () => {
     if (!email) return
     setLoading(true); setError('')
