@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { UtensilsCrossed, ShoppingBag, LogIn, MapPin, Clock, Phone } from 'lucide-react'
+import { UtensilsCrossed, ShoppingBag, LogIn, MapPin, Clock, Phone, PackageSearch } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import { useTheme } from '@/components/ThemeProvider'
 
@@ -17,6 +17,7 @@ const bgImages = [
 const features = [
   { icon: UtensilsCrossed, title: 'Réserver une table', desc: 'Choisissez votre salle et votre table sur un plan interactif', href: '/reservation', color: 'from-blue-500 to-blue-600' },
   { icon: ShoppingBag, title: 'Commander en ligne', desc: 'Parcourez notre carte et passez commande depuis chez vous', href: '/commande', color: 'from-orange-500 to-orange-600' },
+  { icon: PackageSearch, title: 'Suivre ma commande', desc: 'Suivez l\'état de votre commande en temps réel', href: '/suivi-commande', color: 'from-purple-500 to-purple-600' },
   { icon: MapPin, title: 'Nous trouver', desc: 'Au cœur du quartier, venez profiter d\'une cuisine authentique', href: '#', color: 'from-green-500 to-green-600' },
 ]
 
@@ -107,7 +108,7 @@ export default function Home() {
       <section className="py-16 sm:py-24 bg-gray-50">
         <div className="container mx-auto px-4">
           <motion.h3 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-2xl sm:text-3xl font-bold text-center mb-12">Comment ça marche</motion.h3>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {features.map((f, i) => (
               <motion.div key={f.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}>
                 <Link href={f.href} className="block group">
@@ -154,6 +155,7 @@ export default function Home() {
           { href: '/', icon: UtensilsCrossed, label: 'Accueil' },
           { href: '/reservation', icon: MapPin, label: 'Réserver' },
           { href: '/commande', icon: ShoppingBag, label: 'Commander' },
+          { href: '/suivi-commande', icon: PackageSearch, label: 'Suivi' },
           { href: '/login', icon: LogIn, label: 'Admin' },
         ].map(item => (
           <Link key={item.href} href={item.href}

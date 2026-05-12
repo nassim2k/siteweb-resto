@@ -10,7 +10,7 @@ import Input from '@/components/ui/Input'
 import Panier from '@/components/commande/Panier'
 import ValidationEmail from '@/components/commande/ValidationEmail'
 import { formatPrice } from '@/lib/utils'
-import { ShoppingBag, Check, ArrowLeft, UtensilsCrossed, Bike } from 'lucide-react'
+import { ShoppingBag, Check, ArrowLeft, UtensilsCrossed, Bike, MessageSquareText } from 'lucide-react'
 import Link from 'next/link'
 import PlanSalle from '@/components/reservation/PlanSalle'
 
@@ -31,6 +31,9 @@ export default function CommandePage() {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [tables, setTables] = useState<Table[]>([])
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
+  // Text-type attributes per product (for customer input like allergies)
+  const [productTextAttrs, setProductTextAttrs] = useState<Record<string, { id: string; name: string }[]>>({})
+  const [textValues, setTextValues] = useState<Record<string, Record<string, string>>>({})
 
   useEffect(() => {
     supabase.from('product_families').select('*').eq('active', true).order('sort_order').then(({ data }) => {
@@ -43,16 +46,56 @@ export default function CommandePage() {
 
   useEffect(() => {
     if (!activeFamily) return
-    supabase.from('products').select('*').eq('family_id', activeFamily).eq('active', true).order('name').then(({ data }) => {
-      if (data) setProducts(data)
-    })
+    const fetchProducts = async () => {
+      const { data: prods } = await supabase.from('products').select('*').eq('family_id', activeFamily).eq('active', true).order('name')
+      if (!prods) return
+      setProducts(prods)
+
+      // Fetch text-type attributes for all products in this family
+      const ids = prods.map(p => p.id)
+      const { data: prodAttrs } = await supabase
+        .from('product_attributes')
+        .select('product_id, attribute_id')
+        .in('product_id', ids)
+      if (prodAttrs && prodAttrs.length > 0) {
+        const attrIds = [...new Set(prodAttrs.map(a => a.attribute_id))]
+        const { data: defs } = await supabase
+          .from('attribute_definitions')
+          .select('id, name, type')
+          .in('id', attrIds)
+        if (defs) {
+          const textDefIds = new Set(defs.filter(d => d.type === 'text').map(d => d.id))
+          const textMap: Record<string, { id: string; name: string }[]> = {}
+          for (const pa of prodAttrs) {
+            if (textDefIds.has(pa.attribute_id)) {
+              const def = defs.find(d => d.id === pa.attribute_id)
+              if (def) {
+                if (!textMap[pa.product_id]) textMap[pa.product_id] = []
+                textMap[pa.product_id].push({ id: def.id, name: def.name })
+              }
+            }
+          }
+          setProductTextAttrs(textMap)
+        }
+      }
+    }
+    fetchProducts()
   }, [activeFamily])
 
   const addItem = (product: Product) => {
+    const tVals = textValues[product.id]
+    const hasText = tVals && Object.keys(tVals).length > 0
+    // For text-type attributes, also check if they're filled (for "allergies" type, empty is ok)
     setCartItems(prev => {
       const existing = prev.find(i => i.product_id === product.id)
       if (existing) return prev.map(i => i.product_id === product.id ? { ...i, quantity: i.quantity + 1 } : i)
-      return [...prev, { product_id: product.id, name: product.name, price: product.price, quantity: 1 }]
+      return [...prev, {
+        product_id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: 1,
+        text_values: hasText ? tVals : undefined,
+      }]
     })
   }
 
@@ -165,7 +208,9 @@ export default function CommandePage() {
             </div>
             <div className="lg:col-span-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {products.map(product => (
+                {products.map(product => {
+                  const textAttrs = productTextAttrs[product.id]
+                  return (
                   <motion.div key={product.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                     className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-200">
                     {product.image_url && (
@@ -176,6 +221,23 @@ export default function CommandePage() {
                     <div className="p-4">
                       <h3 className="font-bold">{product.name}</h3>
                       {product.description && <p className="text-sm text-gray-500 mt-1 leading-relaxed">{product.description}</p>}
+                      {textAttrs && textAttrs.map(attr => (
+                        <div key={attr.id} className="mt-2">
+                          <label className="text-xs font-medium text-gray-600 flex items-center gap-1 mb-1">
+                            <MessageSquareText size={12} /> {attr.name}
+                          </label>
+                          <textarea
+                            value={textValues[product.id]?.[attr.id] || ''}
+                            onChange={e => setTextValues(prev => ({
+                              ...prev,
+                              [product.id]: { ...(prev[product.id] || {}), [attr.id]: e.target.value },
+                            }))}
+                            placeholder={`Votre ${attr.name.toLowerCase()}...`}
+                            rows={1}
+                            className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] resize-none"
+                          />
+                        </div>
+                      ))}
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
                         <span className="font-bold text-lg text-[var(--primary)]">{formatPrice(product.price)}</span>
                         <Button size="sm" onClick={() => addItem(product)}>
@@ -184,7 +246,8 @@ export default function CommandePage() {
                       </div>
                     </div>
                   </motion.div>
-                ))}
+                  )
+                })}
                 {products.length === 0 && (
                   <p className="text-gray-400 col-span-full text-center py-12">Aucun produit</p>
                 )}
