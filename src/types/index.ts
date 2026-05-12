@@ -13,6 +13,7 @@ export interface Theme {
   background_image: string | null
   logo_url: string | null
   site_name: string
+  hero_images: string[]
   updated_at: string
 }
 

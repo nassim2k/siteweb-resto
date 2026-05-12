@@ -25,6 +25,7 @@ export default function AdminTheme() {
     site_name: 'Mon Restaurant',
     logo_url: '',
     background_image: '',
+    hero_images: [] as string[],
   })
   const [saving, setSaving] = useState(false)
   const [activePreset, setActivePreset] = useState('personnalise')
@@ -36,9 +37,9 @@ export default function AdminTheme() {
     if (key !== 'actuel' && key !== 'personnalise') {
       setLoadingBg(key)
       try {
-        const res = await fetch(`/api/theme-images?theme=${key}`)
+        const res = await fetch(`/api/theme-images?theme=${key}&count=4`)
         const data = await res.json()
-        if (data.url) setForm(f => ({ ...f, background_image: data.url }))
+        if (data.urls?.length) setForm(f => ({ ...f, background_image: data.urls[0], hero_images: data.urls }))
       } catch {}
       setLoadingBg(null)
     }
@@ -49,7 +50,7 @@ export default function AdminTheme() {
       if (data) {
         setTheme(data)
         const colors = { primary_color: data.primary_color, secondary_color: data.secondary_color, accent_color: data.accent_color }
-        setForm({ ...colors, site_name: data.site_name, logo_url: data.logo_url || '', background_image: data.background_image || '' })
+        setForm({ ...colors, site_name: data.site_name, logo_url: data.logo_url || '', background_image: data.background_image || '', hero_images: data.hero_images || [] })
         const match = Object.entries(presets).find(([, p]) => p.primary === colors.primary_color && p.secondary === colors.secondary_color && p.accent === colors.accent_color)
         setActivePreset(match?.[0] || 'personnalise')
       }
@@ -62,6 +63,7 @@ export default function AdminTheme() {
       ...form,
       logo_url: form.logo_url || null,
       background_image: form.background_image || null,
+      hero_images: form.hero_images.length > 0 ? form.hero_images : undefined,
     }).eq('id', theme?.id)
     setSaving(false)
   }

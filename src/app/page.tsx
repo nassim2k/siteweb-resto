@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { useTheme } from '@/components/ThemeProvider'
 
-const bgImages = [
+const defaultBgImages = [
   'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1920&q=80',
   'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1920&q=80',
   'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1920&q=80',
@@ -24,6 +24,7 @@ const features = [
 
 export default function Home() {
   const theme = useTheme()
+  const bgImages = theme?.hero_images?.length ? theme.hero_images : defaultBgImages
   const [bgIndex, setBgIndex] = useState(0)
   const [trackingEmail, setTrackingEmail] = useState('')
   const [showTrackingForm, setShowTrackingForm] = useState(false)
@@ -41,11 +42,12 @@ export default function Home() {
   }
 
   useEffect(() => {
+    setBgIndex(0)
     const timer = setInterval(() => {
       setBgIndex(i => (i + 1) % bgImages.length)
     }, 5000)
     return () => clearInterval(timer)
-  }, [])
+  }, [bgImages])
 
   return (
     <div className="min-h-screen flex flex-col">
