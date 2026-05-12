@@ -3,7 +3,7 @@
 ## ✅ Ce qui fonctionne
 
 ### Front office (clients)
-- [x] Page d'accueil avec héros + slideshow d'images
+- [x] Page d'accueil avec héros + slideshow d'images (crossfade fluide, 20s par image)
 - [x] Commande en ligne (sur place / livraison)
 - [x] Réservation de tables avec plan visuel
 - [x] Page de suivi de commande en temps réel
@@ -26,6 +26,7 @@
 - [x] Gestion des salles + tables (plan visuel)
 - [x] Gestion du thème (couleurs, logo)
 - [x] Gestion des comptes admin
+- [x] Gestion des infos établissement (adresse, téléphone, email, horaires, carte)
 
 ### Système
 - [x] Attribution d'attributs aux produits (via Catalogue)
@@ -39,7 +40,7 @@
 ## ❌ Ce qui reste à faire / À améliorer
 
 ### Bloquant
-- [ ] **Migration SQL manquante** : `ALTER TABLE orders ADD COLUMN IF NOT EXISTS preparation_minutes INTEGER DEFAULT 0;` — à exécuter dans Supabase SQL Editor
+- [ ] **Migration SQL 009** : `ALTER TABLE themes ADD COLUMN IF NOT EXISTS address/phone/contact_email/hours/location_url TEXT;` — à exécuter dans Supabase SQL Editor
 - [ ] **Email aux clients** : Resend limité à `onboarding@resend.dev` → besoin d'un domaine personnalisé pour envoyer à des emails arbitraires
 
 ### Fonctionnalités
@@ -88,3 +89,12 @@ npx vercel deploy --prod   # Déploiement manuel
 - **Repo GitHub** : `nassim2k/siteweb-resto`
 - **Live** : `https://siteweb-resto.vercel.app`
 - **Admin** : `khobzi.nassim@gmail.com` / `admin123`
+
+## 🆕 Dernières modifications
+
+- **Hero crossfade fluide** : deux calques superposés, l'ancienne image s'estompe pendant que la nouvelle apparaît — plus de flash noir
+- **Intervalle 20s** : les images du slideshow changent toutes les 20 secondes
+- **Page Admin → Infos** : formulaire pour saisir adresse, téléphone, email, horaires, lien Google Maps
+- **Page d'accueil dynamique** : la section contact lit les données depuis la base (fallback valeurs par défaut)
+- **Correction lint** : 6 fichiers réparés ("accessed before declaration" — fonctions déplacées avant leur appel dans les effets)
+- **Migration 009** : `themes` table — 5 nouvelles colonnes (address, phone, contact_email, hours, location_url)
