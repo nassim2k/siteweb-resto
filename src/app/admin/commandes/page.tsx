@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Order } from '@/types'
+import { Order, OrderItem } from '@/types'
 import { formatPrice, formatDate, formatTime } from '@/lib/utils'
 import Button from '@/components/ui/Button'
-import { Check, X, Clock, CookingPot, Package, Bike, UtensilsCrossed } from 'lucide-react'
+import { Check, X, Clock, CookingPot, Package, Bike, UtensilsCrossed, ShoppingBag } from 'lucide-react'
 
 export default function AdminCommandes() {
   const supabase = createClient()
-  const [orders, setOrders] = useState<(Order & { table_name?: string })[]>([])
+  const [orders, setOrders] = useState<(Order & { table_name?: string; order_items?: OrderItem[] })[]>([])
   const [tab, setTab] = useState<'pending' | 'confirmed' | 'preparing' | 'ready' | 'all'>('pending')
   const [typeFilter, setTypeFilter] = useState<'all' | 'sur_place' | 'livraison'>('all')
 
@@ -22,9 +22,9 @@ export default function AdminCommandes() {
   }, [])
 
   const fetchOrders = async () => {
-    const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
+    const { data } = await supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false })
     if (data) {
-      const enriched = await Promise.all(data.map(async (o) => {
+      const enriched = await Promise.all(data.map(async (o: any) => {
         if (o.table_id) {
           const { data: t } = await supabase.from('tables_resto').select('name').eq('id', o.table_id).single()
           return { ...o, table_name: t?.name }
@@ -150,6 +150,21 @@ export default function AdminCommandes() {
                           {order.table_name && <p className="text-sm text-gray-500">Table: {order.table_name}</p>}
                           {order.address && <p className="text-sm text-gray-500">Adresse: {order.address}</p>}
                           <p className="text-xs text-gray-400">{formatDate(order.created_at)} à {formatTime(order.created_at)}</p>
+                          {order.order_items && order.order_items.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                              <p className="text-xs font-medium text-gray-500 mb-1.5 flex items-center gap-1">
+                                <ShoppingBag size={12} /> Articles
+                              </p>
+                              <div className="space-y-1">
+                                {order.order_items.map((item, i) => (
+                                  <div key={i} className="flex justify-between text-xs">
+                                    <span className="text-gray-600">{item.quantity}x {item.product_name}</span>
+                                    <span className="text-gray-500">{formatPrice(item.unit_price * item.quantity)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <p className="text-xl font-bold text-[var(--primary)]">{formatPrice(order.total)}</p>
                       </div>
