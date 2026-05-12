@@ -21,6 +21,20 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error
 
+    // Auto-advance : preparing → ready après le temps de préparation
+    if (order.status === 'preparing' && order.preparation_minutes > 0) {
+      const elapsed = (Date.now() - new Date(order.updated_at).getTime()) / 60000
+      if (elapsed >= order.preparation_minutes) {
+        const { data: updated } = await supabase
+          .from('orders')
+          .update({ status: 'ready', updated_at: new Date().toISOString() })
+          .eq('id', orderId)
+          .select()
+          .single()
+        return NextResponse.json({ order: updated || { ...order, status: 'ready' } })
+      }
+    }
+
     return NextResponse.json({ order })
   } catch (error) {
     console.error('Error polling order:', error)

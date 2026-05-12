@@ -43,6 +43,29 @@ export async function POST(req: NextRequest) {
 
     if (itemsError) throw itemsError
 
+    // Calcul du temps de préparation depuis les attributs produits
+    const { data: prepDef } = await supabase
+      .from('attribute_definitions')
+      .select('id')
+      .ilike('name', 'Temps de préparation')
+      .maybeSingle()
+
+    if (prepDef) {
+      const productIds = items.map((item: any) => item.product_id)
+      const { data: productAttrs } = await supabase
+        .from('product_attributes')
+        .select('product_id, value')
+        .eq('attribute_id', prepDef.id)
+        .in('product_id', productIds)
+
+      if (productAttrs && productAttrs.length > 0) {
+        const minutes = Math.max(...productAttrs.map(a => parseInt(a.value) || 0), 0)
+        if (minutes > 0) {
+          await supabase.from('orders').update({ preparation_minutes: minutes }).eq('id', order.id)
+        }
+      }
+    }
+
     return NextResponse.json({ orderId: order.id })
   } catch (error) {
     console.error('Error creating order:', error)

@@ -88,6 +88,7 @@ export interface Order {
   delivery_status: string
   confirmation_code: string | null
   confirmed: boolean
+  preparation_minutes: number
   created_at: string
   updated_at: string
 }
