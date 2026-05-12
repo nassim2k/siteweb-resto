@@ -13,15 +13,7 @@ export default function AdminCommandes() {
   const [tab, setTab] = useState<'pending' | 'confirmed' | 'preparing' | 'ready' | 'all'>('pending')
   const [typeFilter, setTypeFilter] = useState<'all' | 'sur_place' | 'livraison'>('all')
 
-  useEffect(() => {
-    fetchOrders()
-    const channel = supabase.channel('orders-changes-admin')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders())
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [])
-
-  const fetchOrders = async () => {
+  async function fetchOrders() {
     const { data } = await supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false })
     if (data) {
       const enriched = await Promise.all(data.map(async (o: any) => {
@@ -34,6 +26,14 @@ export default function AdminCommandes() {
       setOrders(enriched)
     }
   }
+
+  useEffect(() => {
+    fetchOrders()
+    const channel = supabase.channel('orders-changes-admin')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   const updateStatus = async (id: string, status: string) => {
     await supabase.from('orders').update({ status, updated_at: new Date().toISOString() }).eq('id', id)

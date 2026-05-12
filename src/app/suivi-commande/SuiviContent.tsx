@@ -125,7 +125,7 @@ export default function SuiviContent({ initialEmail }: { initialEmail: string })
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [selectedOrderId])
 
-  const handleSearchWithEmail = async (searchEmail: string) => {
+  async function handleSearchWithEmail(searchEmail: string) {
     if (!searchEmail) return
     setLoading(true); setError('')
     try {

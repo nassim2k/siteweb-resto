@@ -20,12 +20,12 @@ export default function AdminSalles() {
   const [form, setForm] = useState({ name: '', description: '', image_url: '' })
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => { fetchRooms() }, [])
-
-  const fetchRooms = async () => {
+  async function fetchRooms() {
     const { data } = await supabase.from('rooms').select('*').order('sort_order')
     if (data) setRooms(data)
   }
+
+  useEffect(() => { fetchRooms() }, [])
 
   const openCreate = () => {
     setEditing(null)

@@ -14,6 +14,17 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Record<string, number> | null>(null)
   const [readyDeliveries, setReadyDeliveries] = useState<(Order & { table_name?: string })[]>([])
 
+  async function fetchReadyDeliveries() {
+    const { data } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('status', 'ready')
+      .eq('order_type', 'livraison')
+      .order('created_at', { ascending: false })
+      .limit(10)
+    if (data) setReadyDeliveries(data)
+  }
+
   useEffect(() => {
     const fetchStats = async () => {
       const [rooms, tables, products, orders, reservations, confirmedOrders, deliveries] = await Promise.all([
@@ -38,17 +49,6 @@ export default function AdminDashboard() {
     fetchStats()
     fetchReadyDeliveries()
   }, [])
-
-  const fetchReadyDeliveries = async () => {
-    const { data } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('status', 'ready')
-      .eq('order_type', 'livraison')
-      .order('created_at', { ascending: false })
-      .limit(10)
-    if (data) setReadyDeliveries(data)
-  }
 
   const handleEnRoute = async (id: string) => {
     await supabase.from('orders').update({ status: 'in_transit', updated_at: new Date().toISOString() }).eq('id', id)

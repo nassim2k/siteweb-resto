@@ -18,12 +18,12 @@ export default function AdminComptes() {
   const [form, setForm] = useState({ email: '', password: '', is_admin: false })
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => { fetchProfiles() }, [])
-
-  const fetchProfiles = async () => {
+  async function fetchProfiles() {
     const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false })
     if (data) setProfiles(data)
   }
+
+  useEffect(() => { fetchProfiles() }, [])
 
   const toggleAdmin = async (profile: Profile) => {
     const { error } = await supabase.from('profiles').update({ is_admin: !profile.is_admin }).eq('id', profile.id)

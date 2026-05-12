@@ -23,9 +23,7 @@ export default function AdminAttributs() {
   const [optForm, setOptForm] = useState({ attribute_id: '', value: '', price_modifier: 0 })
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => { fetchDefs() }, [])
-
-  const fetchDefs = async () => {
+  async function fetchDefs() {
     const { data: defs } = await supabase.from('attribute_definitions').select('*').order('sort_order')
     if (!defs) return
     const defsWithOpts: typeof definitions = []
@@ -35,6 +33,8 @@ export default function AdminAttributs() {
     }
     setDefinitions(defsWithOpts)
   }
+
+  useEffect(() => { fetchDefs() }, [])
 
   const openCreateDef = () => { setEditDef(null); setDefName(''); setDefType('select'); setDefModal(true) }
   const openEditDef = (d: AttributeDefinition) => { setEditDef(d); setDefName(d.name); setDefType(d.type); setDefModal(true) }

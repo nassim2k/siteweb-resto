@@ -12,15 +12,7 @@ export default function AdminReservations() {
   const [reservations, setReservations] = useState<(Reservation & { table_name?: string; room_name?: string })[]>([])
   const [tab, setTab] = useState<'pending' | 'confirmed' | 'cancelled' | 'all'>('pending')
 
-  useEffect(() => {
-    fetchReservations()
-    const channel = supabase.channel('reservations-admin')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, () => fetchReservations())
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [])
-
-  const fetchReservations = async () => {
+  async function fetchReservations() {
     const { data } = await supabase
       .from('reservations')
       .select('*')
@@ -40,6 +32,14 @@ export default function AdminReservations() {
       setReservations(enriched)
     }
   }
+
+  useEffect(() => {
+    fetchReservations()
+    const channel = supabase.channel('reservations-admin')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, () => fetchReservations())
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   const updateStatus = async (id: string, status: string, tableId?: string) => {
     await supabase.from('reservations').update({ status }).eq('id', id)
