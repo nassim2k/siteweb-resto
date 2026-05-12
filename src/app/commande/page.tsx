@@ -260,7 +260,7 @@ export default function CommandePage() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="max-w-lg mx-auto">
             <h2 className="text-xl font-bold text-center mb-8">Comment souhaitez-vous manger ?</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button onClick={() => handleChooseType('sur_place')}
                 className="bg-white rounded-2xl shadow-sm p-8 text-center hover:shadow-lg hover:ring-2 hover:ring-[var(--primary)] transition-all">
                 <UtensilsCrossed size={48} className="mx-auto mb-4 text-[var(--primary)]" />

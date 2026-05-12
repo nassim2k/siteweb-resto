@@ -109,19 +109,21 @@ export default function Home() {
               </Link>
               {!showTrackingForm ? (
                 <button onClick={() => setShowTrackingForm(true)}
-                  className="w-full sm:w-auto text-base px-8 py-3 rounded-xl border-2 border-white/60 text-white/90 hover:bg-white hover:text-[var(--primary)] transition-all font-medium flex items-center justify-center gap-2">
-                  <PackageSearch size={20} /> Suivre ma commande
+                  className="w-full sm:w-auto text-sm sm:text-base px-6 sm:px-8 py-3 rounded-xl border-2 border-white/60 text-white/90 hover:bg-white hover:text-[var(--primary)] transition-all font-medium flex items-center justify-center gap-2">
+                  <PackageSearch size={18} /> Suivre ma commande
                 </button>
               ) : (
-                <form onSubmit={handleTrackOrder} className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl p-1">
+                <form onSubmit={handleTrackOrder} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl p-2 sm:p-1">
                   <input ref={inputRef} type="email" value={trackingEmail} onChange={e => setTrackingEmail(e.target.value)}
-                    placeholder="Votre email..." className="flex-1 px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:outline-none focus:ring-2 focus:ring-white/30 text-sm" />
-                  <button type="submit" disabled={!trackingEmail.trim()}
-                    className="px-4 py-2 rounded-lg bg-white text-[var(--primary)] font-medium text-sm hover:bg-white/90 transition-colors disabled:opacity-50 flex items-center gap-1">
-                    Suivre <ArrowRight size={16} />
-                  </button>
-                  <button type="button" onClick={() => { setShowTrackingForm(false); setTrackingEmail('') }}
-                    className="px-2 py-2 text-white/70 hover:text-white text-sm">✕</button>
+                    placeholder="Votre email..." className="flex-1 px-4 py-2.5 sm:py-2 rounded-lg bg-white/20 text-white placeholder-white/50 border-0 focus:outline-none focus:ring-2 focus:ring-white/30 text-sm" />
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={!trackingEmail.trim()}
+                      className="flex-1 sm:flex-none px-4 py-2.5 sm:py-2 rounded-lg bg-white text-[var(--primary)] font-medium text-sm hover:bg-white/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-1">
+                      Suivre <ArrowRight size={16} />
+                    </button>
+                    <button type="button" onClick={() => { setShowTrackingForm(false); setTrackingEmail('') }}
+                      className="px-3 py-2.5 sm:py-2 rounded-lg bg-white/10 text-white/70 hover:text-white text-sm">✕</button>
+                  </div>
                 </form>
               )}
             </div>
@@ -226,18 +228,18 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Mobile bottom nav */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 flex shadow-2xl">
+              <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 flex shadow-2xl">
         {[
           { href: '/', icon: UtensilsCrossed, label: 'Accueil' },
-          { href: '/reservation', icon: MapPin, label: 'Réserver' },
-          { href: '/commande', icon: ShoppingBag, label: 'Commander' },
+          { href: '/reservation', icon: MapPin, label: 'Réservation' },
+          { href: '/commande', icon: ShoppingBag, label: 'Commande' },
           { href: '/suivi-commande', icon: PackageSearch, label: 'Suivi' },
           { href: '/login', icon: LogIn, label: 'Admin' },
         ].map(item => (
           <Link key={item.href} href={item.href}
-            className="flex-1 flex flex-col items-center py-2.5 text-xs font-medium text-gray-500 hover:text-[var(--primary)]">
-            <item.icon size={18} />
-            <span>{item.label}</span>
+            className="flex-1 flex flex-col items-center py-2 text-[10px] sm:text-xs font-medium text-gray-500 hover:text-[var(--primary)]">
+            <item.icon size={16} />
+            <span className="mt-0.5">{item.label}</span>
           </Link>
         ))}
       </nav>
