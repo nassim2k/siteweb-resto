@@ -5,6 +5,15 @@ import { createClient } from '@/lib/supabase/client'
 import { Theme } from '@/types'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import { UtensilsCrossed, Beef, Pizza, Coffee, Palette, Sparkles } from 'lucide-react'
+
+const presets: Record<string, { label: string; icon: any; primary: string; secondary: string; accent: string; desc: string }> = {
+  actuel: { label: 'Actuel', icon: Sparkles, primary: '#1e3a5f', secondary: '#f0c040', accent: '#e74c3c', desc: 'Thème par défaut' },
+  gastronomie: { label: 'Gastronomie', icon: UtensilsCrossed, primary: '#1a1a2e', secondary: '#c9a96e', accent: '#8b1a1a', desc: 'Élégant, tons sombres et or' },
+  bistronomie: { label: 'Bistronomie', icon: Beef, primary: '#2d0a0a', secondary: '#e63946', accent: '#1d1d1d', desc: 'Style Hippopotamus, rouge et noir' },
+  streetfood: { label: 'Streetfood', icon: Coffee, primary: '#da291c', secondary: '#ffc72c', accent: '#00704a', desc: 'Style McDonald\'s / Starbucks' },
+  pizza: { label: 'Pizza', icon: Pizza, primary: '#0b3d91', secondary: '#e31837', accent: '#f5f5f5', desc: 'Style Domino\'s, bleu et rouge' },
+}
 
 export default function AdminTheme() {
   const supabase = createClient()
@@ -18,19 +27,16 @@ export default function AdminTheme() {
     background_image: '',
   })
   const [saving, setSaving] = useState(false)
+  const [activePreset, setActivePreset] = useState('personnalise')
 
   useEffect(() => {
     supabase.from('themes').select('*').single().then(({ data }) => {
       if (data) {
         setTheme(data)
-        setForm({
-          primary_color: data.primary_color,
-          secondary_color: data.secondary_color,
-          accent_color: data.accent_color,
-          site_name: data.site_name,
-          logo_url: data.logo_url || '',
-          background_image: data.background_image || '',
-        })
+        const colors = { primary_color: data.primary_color, secondary_color: data.secondary_color, accent_color: data.accent_color }
+        setForm({ ...colors, site_name: data.site_name, logo_url: data.logo_url || '', background_image: data.background_image || '' })
+        const match = Object.entries(presets).find(([, p]) => p.primary === colors.primary_color && p.secondary === colors.secondary_color && p.accent === colors.accent_color)
+        setActivePreset(match?.[0] || 'personnalise')
       }
     })
   }, [])
@@ -57,6 +63,47 @@ export default function AdminTheme() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Personnalisation du thème</h1>
+
+      {/* Sélecteur de thème */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm max-w-2xl mb-6">
+        <h3 className="font-bold mb-4 flex items-center gap-2"><Palette size={18} /> Thèmes prédéfinis</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {Object.entries(presets).map(([key, preset]) => {
+            const Icon = preset.icon
+            const isActive = activePreset === key
+            return (
+              <button key={key} onClick={() => {
+                setActivePreset(key)
+                setForm(f => ({ ...f, primary_color: preset.primary, secondary_color: preset.secondary, accent_color: preset.accent }))
+              }}
+                className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                  isActive ? 'border-[var(--primary)] bg-[var(--primary)]/5' : 'border-gray-200 hover:border-gray-300'
+                }`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon size={18} className={isActive ? 'text-[var(--primary)]' : 'text-gray-500'} />
+                  <span className={`font-bold text-sm ${isActive ? 'text-[var(--primary)]' : 'text-gray-800'}`}>{preset.label}</span>
+                </div>
+                <p className="text-xs text-gray-500 mb-2">{preset.desc}</p>
+                <div className="flex gap-1">
+                  <div className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: preset.primary }} />
+                  <div className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: preset.secondary }} />
+                  <div className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: preset.accent }} />
+                </div>
+              </button>
+            )
+          })}
+          <button onClick={() => setActivePreset('personnalise')}
+            className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+              activePreset === 'personnalise' ? 'border-[var(--primary)] bg-[var(--primary)]/5' : 'border-dashed border-gray-300 hover:border-gray-400'
+            }`}>
+            <div className="flex items-center gap-2 mb-2">
+              <Palette size={18} className={activePreset === 'personnalise' ? 'text-[var(--primary)]' : 'text-gray-500'} />
+              <span className={`font-bold text-sm ${activePreset === 'personnalise' ? 'text-[var(--primary)]' : 'text-gray-800'}`}>Personnalisé</span>
+            </div>
+            <p className="text-xs text-gray-500">Choisissez vos couleurs librement</p>
+          </button>
+        </div>
+      </div>
 
       <div className="bg-white rounded-2xl p-8 shadow-sm max-w-2xl">
         <div className="space-y-6">
