@@ -40,6 +40,8 @@ export default function AdminCommandes() {
     fetchOrders()
   }
 
+  const todayStr = new Date().toISOString().slice(0, 10)
+
   const filtered = orders.filter(o => {
     if (tab === 'all') return true
     return o.status === tab
@@ -47,6 +49,26 @@ export default function AdminCommandes() {
     if (typeFilter === 'all') return true
     return o.order_type === typeFilter
   })
+
+  const groupedByDate: Record<string, typeof filtered> = {}
+  for (const order of filtered) {
+    const dateKey = order.created_at.slice(0, 10)
+    if (!groupedByDate[dateKey]) groupedByDate[dateKey] = []
+    groupedByDate[dateKey].push(order)
+  }
+
+  const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
+    if (a === todayStr) return -1
+    if (b === todayStr) return 1
+    return b.localeCompare(a)
+  })
+
+  const formatDateHeader = (dateStr: string) => {
+    if (dateStr === todayStr) return "Aujourd'hui"
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1)
+    if (dateStr === yesterday.toISOString().slice(0, 10)) return 'Hier'
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+  }
 
   const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
     pending: { label: 'En attente', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
@@ -89,79 +111,98 @@ export default function AdminCommandes() {
           </button>
         ))}
       </div>
-      <div className="space-y-4">
-        {filtered.map(order => {
-          const StatusIcon = statusConfig[order.status]?.icon || Clock
-          const isDelivery = order.order_type === 'livraison'
+      <div className="space-y-8">
+        {sortedDates.map(dateStr => {
+          const ordersForDate = groupedByDate[dateStr]
+          const isToday = dateStr === todayStr
           return (
-            <div key={order.id} className="bg-white rounded-xl p-6 shadow-sm">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-bold">{order.customer_name}</h3>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig[order.status]?.color}`}>
-                      <StatusIcon size={12} className="inline mr-1" />
-                      {statusConfig[order.status]?.label}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isDelivery ? 'bg-orange-50 text-orange-700' : 'bg-blue-50 text-blue-700'}`}>
-                      {isDelivery ? <Bike size={12} className="inline mr-1" /> : <UtensilsCrossed size={12} className="inline mr-1" />}
-                      {isDelivery ? 'Livraison' : 'Sur place'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500">{order.customer_email}</p>
-                  {order.customer_phone && <p className="text-sm text-gray-500">Tél: {order.customer_phone}</p>}
-                  {order.table_name && <p className="text-sm text-gray-500">Table: {order.table_name}</p>}
-                  {order.address && <p className="text-sm text-gray-500">Adresse: {order.address}</p>}
-                  <p className="text-xs text-gray-400">{formatDate(order.created_at)} à {formatTime(order.created_at)}</p>
-                </div>
-                <p className="text-xl font-bold text-[var(--primary)]">{formatPrice(order.total)}</p>
+            <div key={dateStr}>
+              <div className={`flex items-center gap-2 mb-3 ${isToday ? 'sticky top-0 z-10' : ''}`}>
+                <span className={`text-lg font-bold ${isToday ? 'text-[var(--primary)]' : 'text-gray-700'}`}>
+                  {formatDateHeader(dateStr)}
+                </span>
+                <span className="px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-500">
+                  {ordersForDate.length} commande{ordersForDate.length > 1 ? 's' : ''}
+                </span>
+                {isToday && <span className="ml-auto text-xs text-[var(--primary)] font-medium">En cours</span>}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {order.status === 'pending' && (
-                  <>
-                    <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'confirmed')}>
-                      <Check size={16} /> Confirmer
-                    </Button>
-                    <Button size="sm" variant="danger" onClick={() => updateStatus(order.id, 'cancelled')}>
-                      <X size={16} /> Annuler
-                    </Button>
-                  </>
-                )}
-                {order.status === 'confirmed' && (
-                  <>
-                    <Button size="sm" variant="secondary" onClick={() => updateStatus(order.id, 'preparing')}>
-                      <CookingPot size={16} /> En cuisine
-                    </Button>
-                    <Button size="sm" variant="danger" onClick={() => updateStatus(order.id, 'cancelled')}>
-                      <X size={16} /> Annuler
-                    </Button>
-                  </>
-                )}
-                {order.status === 'preparing' && (
-                  <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'ready')}>
-                    <Package size={16} /> Prête
-                  </Button>
-                )}
-                {order.status === 'ready' && isDelivery && (
-                  <Button size="sm" variant="secondary" onClick={() => updateStatus(order.id, 'in_transit')}>
-                    <Bike size={16} /> En route
-                  </Button>
-                )}
-                {order.status === 'ready' && !isDelivery && (
-                  <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'delivered')}>
-                    <Check size={16} /> Servi
-                  </Button>
-                )}
-                {order.status === 'in_transit' && (
-                  <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'delivered')}>
-                    <Check size={16} /> Livré
-                  </Button>
-                )}
+              <div className="space-y-4">
+                {ordersForDate.map(order => {
+                  const StatusIcon = statusConfig[order.status]?.icon || Clock
+                  const isDelivery = order.order_type === 'livraison'
+                  return (
+                    <div key={order.id} className="bg-white rounded-xl p-6 shadow-sm">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-bold">{order.customer_name}</h3>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig[order.status]?.color}`}>
+                              <StatusIcon size={12} className="inline mr-1" />
+                              {statusConfig[order.status]?.label}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isDelivery ? 'bg-orange-50 text-orange-700' : 'bg-blue-50 text-blue-700'}`}>
+                              {isDelivery ? <Bike size={12} className="inline mr-1" /> : <UtensilsCrossed size={12} className="inline mr-1" />}
+                              {isDelivery ? 'Livraison' : 'Sur place'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500">{order.customer_email}</p>
+                          {order.customer_phone && <p className="text-sm text-gray-500">Tél: {order.customer_phone}</p>}
+                          {order.table_name && <p className="text-sm text-gray-500">Table: {order.table_name}</p>}
+                          {order.address && <p className="text-sm text-gray-500">Adresse: {order.address}</p>}
+                          <p className="text-xs text-gray-400">{formatDate(order.created_at)} à {formatTime(order.created_at)}</p>
+                        </div>
+                        <p className="text-xl font-bold text-[var(--primary)]">{formatPrice(order.total)}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {order.status === 'pending' && (
+                          <>
+                            <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'confirmed')}>
+                              <Check size={16} /> Confirmer
+                            </Button>
+                            <Button size="sm" variant="danger" onClick={() => updateStatus(order.id, 'cancelled')}>
+                              <X size={16} /> Annuler
+                            </Button>
+                          </>
+                        )}
+                        {order.status === 'confirmed' && (
+                          <>
+                            <Button size="sm" variant="secondary" onClick={() => updateStatus(order.id, 'preparing')}>
+                              <CookingPot size={16} /> En cuisine
+                            </Button>
+                            <Button size="sm" variant="danger" onClick={() => updateStatus(order.id, 'cancelled')}>
+                              <X size={16} /> Annuler
+                            </Button>
+                          </>
+                        )}
+                        {order.status === 'preparing' && (
+                          <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'ready')}>
+                            <Package size={16} /> Prête
+                          </Button>
+                        )}
+                        {order.status === 'ready' && isDelivery && (
+                          <Button size="sm" variant="secondary" onClick={() => updateStatus(order.id, 'in_transit')}>
+                            <Bike size={16} /> En route
+                          </Button>
+                        )}
+                        {order.status === 'ready' && !isDelivery && (
+                          <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'delivered')}>
+                            <Check size={16} /> Servi
+                          </Button>
+                        )}
+                        {order.status === 'in_transit' && (
+                          <Button size="sm" variant="primary" onClick={() => updateStatus(order.id, 'delivered')}>
+                            <Check size={16} /> Livré
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )
         })}
-        {filtered.length === 0 && (
+        {sortedDates.length === 0 && (
           <p className="text-center text-gray-400 py-12">Aucune commande</p>
         )}
       </div>
