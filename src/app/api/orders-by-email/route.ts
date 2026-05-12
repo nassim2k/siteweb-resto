@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const { data: orders, error } = await supabase
       .from('orders')
       .select('*, order_items(*)')
-      .eq('customer_email', email)
+      .ilike('customer_email', email)
       .order('created_at', { ascending: false })
 
     if (error) throw error

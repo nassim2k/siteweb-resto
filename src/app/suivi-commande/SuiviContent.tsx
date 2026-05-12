@@ -219,48 +219,7 @@ export default function SuiviContent({ initialEmail }: { initialEmail: string })
                   </p>
                 </div>
 
-                <div className="bg-white/95 backdrop-blur-sm rounded-xl p-5 shadow-lg">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm font-medium">Progression</span>
-                    <span className="text-sm font-bold text-[var(--primary)]">{progress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                      className="bg-[var(--primary)] h-2.5 rounded-full" />
-                  </div>
-                </div>
-
-                <div className="bg-white/95 backdrop-blur-sm rounded-xl p-5 shadow-lg">
-                  <div className="relative">
-                    {statusSteps.map((step, i) => {
-                      const isPast = stepIndex >= i
-                      const isCurrent = stepIndex === i
-                      const isDelivery = activeOrder.order_type === 'livraison'
-                      if (step.key === 'in_transit' && !isDelivery) return null
-                      return (
-                        <div key={step.key} className="flex items-start gap-4 pb-6 last:pb-0">
-                          <div className="flex flex-col items-center">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                              isPast ? 'bg-green-500 text-white' : isCurrent ? 'bg-[var(--primary)] text-white ring-4 ring-[var(--primary)]/20' : 'bg-gray-200 text-gray-400'
-                            }`}>
-                              {isPast ? <Check size={16} /> : <step.icon size={16} />}
-                            </div>
-                            {i < statusSteps.length - 1 && (
-                              <div className={`w-0.5 h-8 ${isPast && i < statusSteps.length - 1 ? 'bg-green-500' : 'bg-gray-200'}`} />
-                            )}
-                          </div>
-                          <div className="pt-1">
-                            <p className={`font-medium ${isPast || isCurrent ? 'text-gray-900' : 'text-gray-400'}`}>{step.label}</p>
-                            {isCurrent && <p className="text-sm text-gray-500">En cours...</p>}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div className="bg-white/95 backdrop-blur-sm rounded-xl p-5 shadow-lg">
+                <div className="bg-white/80 backdrop-blur-md rounded-xl p-5 shadow-lg">
                   <h3 className="font-bold mb-4 flex items-center gap-2">
                     <ShoppingBag size={18} /> Détails de la commande
                   </h3>
@@ -290,6 +249,47 @@ export default function SuiviContent({ initialEmail }: { initialEmail: string })
                   {currentStatus === 'delivered' && activeOrder.delivery_status === 'received' && (
                     <p className="text-green-600 text-sm font-medium text-center mt-4">✓ Commande bien reçue</p>
                   )}
+                </div>
+
+                <div className="bg-white/80 backdrop-blur-md rounded-xl p-5 shadow-lg">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm font-medium">Progression</span>
+                    <span className="text-sm font-bold text-[var(--primary)]">{progress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
+                      transition={{ duration: 0.8, ease: 'easeOut' }}
+                      className="bg-[var(--primary)] h-2.5 rounded-full" />
+                  </div>
+                </div>
+
+                <div className="bg-white/80 backdrop-blur-md rounded-xl p-5 shadow-lg">
+                  <div className="relative">
+                    {statusSteps.map((step, i) => {
+                      const isPast = stepIndex >= i
+                      const isCurrent = stepIndex === i
+                      const isDelivery = activeOrder.order_type === 'livraison'
+                      if (step.key === 'in_transit' && !isDelivery) return null
+                      return (
+                        <div key={step.key} className="flex items-start gap-4 pb-6 last:pb-0">
+                          <div className="flex flex-col items-center">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              isPast ? 'bg-green-500 text-white' : isCurrent ? 'bg-[var(--primary)] text-white ring-4 ring-[var(--primary)]/20' : 'bg-gray-200 text-gray-400'
+                            }`}>
+                              {isPast ? <Check size={16} /> : <step.icon size={16} />}
+                            </div>
+                            {i < statusSteps.length - 1 && (
+                              <div className={`w-0.5 h-8 ${isPast && i < statusSteps.length - 1 ? 'bg-green-500' : 'bg-gray-200'}`} />
+                            )}
+                          </div>
+                          <div className="pt-1">
+                            <p className={`font-medium ${isPast || isCurrent ? 'text-gray-900' : 'text-gray-400'}`}>{step.label}</p>
+                            {isCurrent && <p className="text-sm text-gray-500">En cours...</p>}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
