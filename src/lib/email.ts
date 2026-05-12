@@ -1,7 +1,5 @@
 'use server'
 
-import nodemailer from 'nodemailer'
-
 interface EmailOptions {
   to: string
   subject: string
@@ -10,24 +8,25 @@ interface EmailOptions {
 }
 
 export async function sendEmail({ to, subject, text, html }: EmailOptions) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.SMTP_PASS}`,
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify({
+      from: process.env.SMTP_FROM || 'Khobzi Restaurant <onboarding@resend.dev>',
+      to,
+      subject,
+      text,
+      html,
+    }),
   })
-  const fromEmail = process.env.SMTP_FROM || `"Khobzi Restaurant" <${process.env.SMTP_USER}>`
 
-  await transporter.sendMail({
-    from: fromEmail,
-    to,
-    subject,
-    text,
-    html,
-  })
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Resend API error: ${res.status} ${err}`)
+  }
 }
 
 export async function sendConfirmationCode(
