@@ -80,6 +80,7 @@ export interface Order {
   table_id: string | null
   customer_name: string
   customer_email: string
+  customer_phone: string | null
   total: number
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled'
   order_type: 'sur_place' | 'livraison'

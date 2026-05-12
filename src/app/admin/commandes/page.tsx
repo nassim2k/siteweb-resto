@@ -109,6 +109,7 @@ export default function AdminCommandes() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-500">{order.customer_email}</p>
+                  {order.customer_phone && <p className="text-sm text-gray-500">Tél: {order.customer_phone}</p>}
                   {order.table_name && <p className="text-sm text-gray-500">Table: {order.table_name}</p>}
                   {order.address && <p className="text-sm text-gray-500">Adresse: {order.address}</p>}
                   <p className="text-xs text-gray-400">{formatDate(order.created_at)} à {formatTime(order.created_at)}</p>

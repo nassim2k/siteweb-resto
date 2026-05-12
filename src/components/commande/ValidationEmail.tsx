@@ -25,14 +25,17 @@ export default function ValidationEmail({ email, orderId, orderData, onConfirmed
   const [generatedCode, setGeneratedCode] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
+  const [emailFailed, setEmailFailed] = useState(false)
 
   const handleSendCode = async () => {
     setSending(true)
+    setError('')
+    setEmailFailed(false)
     const newCode = generateCode()
     setGeneratedCode(newCode)
 
     try {
-      await fetch('/api/send-code', {
+      const res = await fetch('/api/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -41,11 +44,14 @@ export default function ValidationEmail({ email, orderId, orderData, onConfirmed
           type: 'commande',
         }),
       })
-      setStep('code')
+      if (!res.ok) {
+        setEmailFailed(true)
+      }
     } catch {
-      setError('Erreur d\'envoi du code')
+      setEmailFailed(true)
     }
     setSending(false)
+    setStep('code')
   }
 
   const handleConfirm = async () => {
@@ -78,10 +84,22 @@ export default function ValidationEmail({ email, orderId, orderData, onConfirmed
       >
         <div className="text-center">
           <h3 className="text-lg font-bold mb-2">Code de confirmation</h3>
-          <p className="text-gray-600 text-sm">
-            Un code a été envoyé à {email}
-          </p>
+          {emailFailed ? (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4 text-sm text-yellow-800">
+              L'envoi par email a échoué. Utilisez le code ci-dessous pour confirmer votre commande.
+            </div>
+          ) : (
+            <p className="text-gray-600 text-sm">Un code a été envoyé à {email}</p>
+          )}
         </div>
+
+        {emailFailed && (
+          <div className="bg-gray-50 rounded-xl p-4 text-center">
+            <p className="text-xs text-gray-500 mb-1">Votre code de confirmation</p>
+            <p className="text-3xl font-bold tracking-[8px] text-[var(--primary)]">{generatedCode}</p>
+          </div>
+        )}
+
         <Input
           label="Code de confirmation"
           value={code}

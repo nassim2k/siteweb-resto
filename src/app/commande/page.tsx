@@ -25,6 +25,7 @@ export default function CommandePage() {
   const [orderType, setOrderType] = useState<'sur_place' | 'livraison'>('livraison')
   const [customerName, setCustomerName] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
   const [customerAddress, setCustomerAddress] = useState('')
   const [orderId, setOrderId] = useState<string | null>(null)
   const [rooms, setRooms] = useState<Room[]>([])
@@ -125,30 +126,24 @@ export default function CommandePage() {
   }
 
   const handleSubmitOrder = async () => {
-    const insertData: Record<string, any> = {
-      customer_name: customerName,
-      customer_email: customerEmail,
-      total,
-      status: 'pending',
-      confirmed: false,
-      order_type: orderType,
-    }
-    if (orderType === 'livraison') insertData.address = customerAddress
-    if (orderType === 'sur_place' && selectedTable) insertData.table_id = selectedTable.id
-
-    const { data: order } = await supabase.from('orders').insert(insertData).select().single()
-
-    if (order) {
-      setOrderId(order.id)
-      await supabase.from('order_items').insert(
-        cartItems.map(item => ({
-          order_id: order.id,
-          product_id: item.product_id,
-          product_name: item.name,
-          quantity: item.quantity,
-          unit_price: item.price,
-        }))
-      )
+    const res = await fetch('/api/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer_name: customerName,
+        customer_email: customerEmail,
+        customer_phone: customerPhone || null,
+        total,
+        order_type: orderType,
+        address: orderType === 'livraison' ? customerAddress : null,
+        table_id: orderType === 'sur_place' && selectedTable ? selectedTable.id : null,
+        items: cartItems,
+        text_values: cartItems.filter(i => i.text_values).reduce((acc, i) => ({ ...acc, [i.product_id]: i.text_values }), {}),
+      }),
+    })
+    const data = await res.json()
+    if (data.orderId) {
+      setOrderId(data.orderId)
     }
     setStep('code')
   }
@@ -348,6 +343,7 @@ export default function CommandePage() {
             <div className="space-y-4 mb-6">
               <Input label="Nom complet" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Votre nom" />
               <Input label="Email" type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="votre@email.com" />
+              <Input label="Téléphone" type="tel" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="06 12 34 56 78" />
               {orderType === 'livraison' && (
                 <Input label="Adresse de livraison" value={customerAddress} onChange={e => setCustomerAddress(e.target.value)} placeholder="Numéro, rue, code postal, ville" />
               )}
