@@ -34,22 +34,25 @@ export default function ValidationEmail({ email, orderId, orderData, onConfirmed
     const newCode = generateCode()
     setGeneratedCode(newCode)
 
-    try {
-      const res = await fetch('/api/send-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          code: newCode,
-          type: 'commande',
-        }),
-      })
-      if (!res.ok) {
-        setEmailFailed(true)
+    let ok = false
+    for (let attempt = 0; attempt < 3 && !ok; attempt++) {
+      try {
+        const res = await fetch('/api/send-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            code: newCode,
+            type: 'commande',
+          }),
+        })
+        if (res.ok) { ok = true; break }
+      } catch {
+        // retry
       }
-    } catch {
-      setEmailFailed(true)
     }
+
+    if (!ok) setEmailFailed(true)
     setSending(false)
     setStep('code')
   }

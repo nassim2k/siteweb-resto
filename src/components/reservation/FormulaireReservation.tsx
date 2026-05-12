@@ -50,20 +50,25 @@ export default function FormulaireReservation({ table, onSuccess }: FormulaireRe
     const newCode = generateCode()
     setGeneratedCode(newCode)
 
-    try {
-      const res = await fetch('/api/send-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: form.email,
-          code: newCode,
-          type: 'reservation',
-        }),
-      })
-      if (!res.ok) setEmailFailed(true)
-    } catch {
-      setEmailFailed(true)
+    let ok = false
+    for (let attempt = 0; attempt < 3 && !ok; attempt++) {
+      try {
+        const res = await fetch('/api/send-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: form.email,
+            code: newCode,
+            type: 'reservation',
+          }),
+        })
+        if (res.ok) { ok = true; break }
+      } catch {
+        // retry
+      }
     }
+
+    if (!ok) setEmailFailed(true)
     setSending(false)
     setStep('code')
   }
