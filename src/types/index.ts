@@ -136,11 +136,17 @@ export interface ProductAttribute {
   value: string | null
 }
 
+export interface CartItemModifier {
+  attribute_name: string
+  option_value: string
+  price_modifier: number
+}
+
 export interface CartItem {
   product_id: string
   name: string
   price: number
   quantity: number
-  attributes?: { attribute_name: string; option_value: string; price_modifier: number }[]
+  modifiers?: CartItemModifier[]
   text_values?: Record<string, string>
 }

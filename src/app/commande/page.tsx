@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
-import { ProductFamily, Product, CartItem, Room, Table } from '@/types'
+import { ProductFamily, Product, CartItem, CartItemModifier, Room, Table, AttributeDefinitionWithOptions } from '@/types'
 import { useTheme } from '@/components/ThemeProvider'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Panier from '@/components/commande/Panier'
 import ValidationEmail from '@/components/commande/ValidationEmail'
 import { formatPrice } from '@/lib/utils'
-import { ShoppingBag, Check, ArrowLeft, UtensilsCrossed, Bike, MessageSquareText } from 'lucide-react'
+import { ShoppingBag, Check, ArrowLeft, UtensilsCrossed, Bike } from 'lucide-react'
 import Link from 'next/link'
 import PlanSalle from '@/components/reservation/PlanSalle'
 
@@ -32,9 +32,11 @@ export default function CommandePage() {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [tables, setTables] = useState<Table[]>([])
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
-  // Text-type attributes per product (for customer input like allergies)
   const [productTextAttrs, setProductTextAttrs] = useState<Record<string, { id: string; name: string }[]>>({})
   const [textValues, setTextValues] = useState<Record<string, Record<string, string>>>({})
+  // Select-type attributes with their options
+  const [productSelectAttrs, setProductSelectAttrs] = useState<Record<string, AttributeDefinitionWithOptions[]>>({})
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, Record<string, string>>>({})
 
   useEffect(() => {
     supabase.from('product_families').select('*').eq('active', true).order('sort_order').then(({ data }) => {
@@ -52,7 +54,6 @@ export default function CommandePage() {
       if (!prods) return
       setProducts(prods)
 
-      // Fetch text-type attributes for all products in this family
       const ids = prods.map(p => p.id)
       const { data: prodAttrs } = await supabase
         .from('product_attributes')
@@ -62,39 +63,105 @@ export default function CommandePage() {
         const attrIds = [...new Set(prodAttrs.map(a => a.attribute_id))]
         const { data: defs } = await supabase
           .from('attribute_definitions')
-          .select('id, name, type')
+          .select('id, name, type, sort_order, created_at')
           .in('id', attrIds)
+          .order('sort_order')
         if (defs) {
-          const textDefIds = new Set(defs.filter(d => d.type === 'text').map(d => d.id))
-          const textMap: Record<string, { id: string; name: string }[]> = {}
-          for (const pa of prodAttrs) {
-            if (textDefIds.has(pa.attribute_id)) {
-              const def = defs.find(d => d.id === pa.attribute_id)
-              if (def) {
-                if (!textMap[pa.product_id]) textMap[pa.product_id] = []
-                textMap[pa.product_id].push({ id: def.id, name: def.name })
+          const textAttrs = defs.filter(d => d.type === 'text')
+          const selectAttrs = defs.filter(d => d.type === 'select')
+
+          // Fetch options for select-type attributes
+          let optionsMap: Record<string, { id: string; attribute_id: string; value: string; price_modifier: number; sort_order: number }[]> = {}
+          if (selectAttrs.length > 0) {
+            const { data: opts } = await supabase
+              .from('attribute_options')
+              .select('*')
+              .in('attribute_id', selectAttrs.map(a => a.id))
+              .order('sort_order')
+            if (opts) {
+              for (const opt of opts) {
+                if (!optionsMap[opt.attribute_id]) optionsMap[opt.attribute_id] = []
+                optionsMap[opt.attribute_id].push(opt)
               }
             }
           }
+
+          // Build maps per product
+          const textMap: Record<string, { id: string; name: string }[]> = {}
+          const selectMap: Record<string, AttributeDefinitionWithOptions[]> = {}
+          for (const pa of prodAttrs) {
+            const def = defs.find(d => d.id === pa.attribute_id)
+            if (!def) continue
+            if (def.type === 'text') {
+              if (!textMap[pa.product_id]) textMap[pa.product_id] = []
+              textMap[pa.product_id].push({ id: def.id, name: def.name })
+            } else if (def.type === 'select') {
+              if (!selectMap[pa.product_id]) selectMap[pa.product_id] = []
+              selectMap[pa.product_id].push({
+                ...def,
+                options: optionsMap[def.id] || [],
+              })
+            }
+          }
           setProductTextAttrs(textMap)
+          setProductSelectAttrs(selectMap)
+
+          // Set default selected option (first) for each attribute
+          const defaults: Record<string, Record<string, string>> = {}
+          for (const [prodId, attrs] of Object.entries(selectMap)) {
+            for (const attr of attrs) {
+              if (attr.options.length > 0) {
+                if (!defaults[prodId]) defaults[prodId] = {}
+                defaults[prodId][attr.id] = attr.options[0].id
+              }
+            }
+          }
+          setSelectedOptions(prev => ({ ...defaults, ...prev }))
         }
       }
     }
     fetchProducts()
   }, [activeFamily])
 
+  const getProductModifiers = (productId: string): CartItemModifier[] => {
+    const selectAttrs = productSelectAttrs[productId]
+    if (!selectAttrs) return []
+    const modifiers: CartItemModifier[] = []
+    for (const attr of selectAttrs) {
+      const selectedOptionId = selectedOptions[productId]?.[attr.id]
+      if (selectedOptionId) {
+        const option = attr.options.find(o => o.id === selectedOptionId)
+        if (option) {
+          modifiers.push({
+            attribute_name: attr.name,
+            option_value: option.value,
+            price_modifier: option.price_modifier,
+          })
+        }
+      }
+    }
+    return modifiers
+  }
+
+  const getProductAdjustedPrice = (product: Product): number => {
+    const modifiers = getProductModifiers(product.id)
+    return product.price + modifiers.reduce((sum, m) => sum + (m.price_modifier || 0), 0)
+  }
+
   const addItem = (product: Product) => {
     const tVals = textValues[product.id]
     const hasText = tVals && Object.keys(tVals).length > 0
-    // For text-type attributes, also check if they're filled (for "allergies" type, empty is ok)
+    const modifiers = getProductModifiers(product.id)
+    const adjustedPrice = getProductAdjustedPrice(product)
     setCartItems(prev => {
       const existing = prev.find(i => i.product_id === product.id)
       if (existing) return prev.map(i => i.product_id === product.id ? { ...i, quantity: i.quantity + 1 } : i)
       return [...prev, {
         product_id: product.id,
         name: product.name,
-        price: product.price,
+        price: adjustedPrice,
         quantity: 1,
+        modifiers: modifiers.length > 0 ? modifiers : undefined,
         text_values: hasText ? tVals : undefined,
       }]
     })
@@ -138,6 +205,7 @@ export default function CommandePage() {
         address: orderType === 'livraison' ? customerAddress : null,
         table_id: orderType === 'sur_place' && selectedTable ? selectedTable.id : null,
         items: cartItems,
+        modifiers_data: cartItems.filter(i => i.modifiers).reduce((acc, i) => ({ ...acc, [i.product_id]: i.modifiers }), {}),
         text_values: cartItems.filter(i => i.text_values).reduce((acc, i) => ({ ...acc, [i.product_id]: i.text_values }), {}),
       }),
     })
@@ -205,6 +273,8 @@ export default function CommandePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {products.map(product => {
                   const textAttrs = productTextAttrs[product.id]
+                  const selectAttrs = productSelectAttrs[product.id]
+                  const adjPrice = getProductAdjustedPrice(product)
                   return (
                   <motion.div key={product.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                     className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
@@ -220,6 +290,30 @@ export default function CommandePage() {
                     <div className="p-4">
                       <h3 className="font-bold text-gray-900">{product.name}</h3>
                       {product.description && <p className="text-sm text-gray-500 mt-1 leading-relaxed line-clamp-2">{product.description}</p>}
+                      {selectAttrs && selectAttrs.map(attr => (
+                        <div key={attr.id} className="mt-2">
+                          <label className="text-xs font-medium text-gray-600 block mb-1">{attr.name}</label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {attr.options.map(opt => {
+                              const isSelected = selectedOptions[product.id]?.[attr.id] === opt.id
+                              return (
+                                <button key={opt.id}
+                                  onClick={() => setSelectedOptions(prev => ({
+                                    ...prev,
+                                    [product.id]: { ...(prev[product.id] || {}), [attr.id]: opt.id }
+                                  }))}
+                                  className={`px-2.5 py-1 text-xs rounded-lg border transition-all ${
+                                    isSelected
+                                      ? 'border-[var(--primary)] bg-[var(--primary)]/10 text-[var(--primary)] font-medium'
+                                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                                  }`}>
+                                  {opt.value}{opt.price_modifier > 0 ? ` +${formatPrice(opt.price_modifier)}` : ''}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      ))}
                       {textAttrs && textAttrs.map(attr => (
                         <div key={attr.id} className="mt-2">
                           <textarea value={textValues[product.id]?.[attr.id] || ''}
@@ -229,7 +323,12 @@ export default function CommandePage() {
                         </div>
                       ))}
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                        <span className="font-bold text-lg" style={{ color: 'var(--primary)' }}>{formatPrice(product.price)}</span>
+                        <div>
+                          <span className="font-bold text-lg" style={{ color: 'var(--primary)' }}>{formatPrice(adjPrice)}</span>
+                          {adjPrice !== product.price && (
+                            <span className="text-xs text-gray-400 line-through ml-1">{formatPrice(product.price)}</span>
+                          )}
+                        </div>
                         <button onClick={() => addItem(product)}
                           className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all hover:shadow-lg active:scale-95"
                           style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary, var(--primary)))` }}>
@@ -350,7 +449,14 @@ export default function CommandePage() {
               <h3 className="font-bold mb-2">Récapitulatif</h3>
               {cartItems.map(item => (
                 <div key={item.product_id} className="flex justify-between text-sm py-1">
-                  <span>{item.name} x{item.quantity}</span>
+                  <div>
+                    <span>{item.name} x{item.quantity}</span>
+                    {item.modifiers && item.modifiers.length > 0 && (
+                      <p className="text-xs text-gray-400">
+                        {item.modifiers.map(m => `${m.option_value}${m.price_modifier > 0 ? ` +${formatPrice(m.price_modifier)}` : ''}`).join(', ')}
+                      </p>
+                    )}
+                  </div>
                   <span>{formatPrice(item.price * item.quantity)}</span>
                 </div>
               ))}

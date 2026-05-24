@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: NextRequest) {
   try {
-    const { customer_name, customer_email, customer_phone, total, order_type, address, table_id, items, text_values } = await req.json()
+    const { customer_name, customer_email, customer_phone, total, order_type, address, table_id, items, text_values, modifiers_data } = await req.json()
     if (!customer_name || !customer_email || !items || items.length === 0) {
       return NextResponse.json({ error: 'Données incomplètes' }, { status: 400 })
     }
@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
         product_name: item.name,
         quantity: item.quantity,
         unit_price: item.price,
+        modifiers: item.modifiers || [],
       })))
 
     if (itemsError) throw itemsError

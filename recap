@@ -1,0 +1,179 @@
+RÉCAPITULATIF COMPLET — TOUTES SESSIONS Gosto POS
+====================================================
+Projet : D:\GOSTO2\web-pos2
+Stack : React + Vite + TypeScript + Zustand (POS), Express + Prisma (backend), Next.js (web)
+
+================================================================================
+MODULES & COMPOSANTS DU PROJET
+================================================================================
+
+1. POS (packages/pos/src)
+=========================
+
+1.1 APP & ROUTES
+----------------
+- App.tsx : routes / (Caisse), /plan-salle, /kitchen, /delivery, /dashboard
+- ProtectedRoute : 6 rôles (ADMIN, MANAGER, CASHIER, KITCHEN, LIVREUR, CLIENT)
+- Permissions granulaires (read/write/execute par module)
+
+1.2 CAISSE (CashierView.tsx ~1483 lignes)
+-----------------------------------------
+- 3 modes commande : Sur place, À emporter, À livrer
+- Grille produits 7 colonnes, drill-down par famille
+- Panier latéral droit (384px) avec gestion complète des articles
+- Modal produit : quantité, taille, suppléments, message
+- Modal encaissement : 3 moyens paiement (Espèces, Carte, Ticket)
+- Modal sélection table : plan visuel avec occupation
+- Session ouverture/fermeture
+- Indicateur connecté/hors-ligne
+- Socket temps réel (commandes, cuisine, produits)
+- Auto-refresh 15s + focus/visibility
+- Impression ticket thermique (réseau + WebUSB)
+- Offline fallback (IndexedDB + données démo)
+- Verrouillage table (autoLockTables localStorage)
+- Adresse livraison + téléphone
+
+1.3 PLAN DE SALLE (PlanSalleView.tsx ~422 lignes)
+---------------------------------------------------
+- Grille visuelle des tables avec statut occupation
+- Alertes appel serveur (pulse 30s auto-dismiss)
+- Verrouillage/déverrouillage table
+- Panneau commande latéral (480px)
+- Onglets familles (horizontal)
+- Grille produits 3 colonnes
+- Modal produit : taille, suppléments (6 prédéfinis), note
+
+1.4 CUISINE (KitchenDisplay.tsx ~497 lignes)
+-----------------------------------------------
+- Kanban 3 colonnes : Reçues / En préparation / Prêtes
+- Drag-and-drop entre colonnes
+- Cartes commande : numéro, type, articles, timer
+- Minuteur intelligent par file d'attente
+- Code couleur urgence : vert/ambre/rouge + pulse
+- Filtre par station cuisine
+- Socket temps réel
+
+1.5 LIVRAISON (DeliveryView.tsx ~271 lignes)
+-----------------------------------------------
+- Liste commandes latérale (384px)
+- Carte Leaflet interactive (fond CartoDB dark)
+- Marqueurs restaurant (orange) + livraisons (vert/rouge)
+- Calcul itinéraire OSRM (distance + durée)
+- Géolocalisation utilisateur
+- Lien Google Maps navigation
+- Workflow capture (non-capturée → capturée → livrée)
+
+1.6 AUTH (Login.tsx)
+---------------------
+- Double mode : Email ou Nom/Prénom
+- Comptes démo : admin@posweb.fr, caissier@posweb.fr, cuisine@posweb.fr
+
+1.7 DASHBOARD (12 sections)
+----------------------------
+
+| Panel | Fichier | Fonctionnalités |
+|-------|---------|-----------------|
+| Stats | StatsPanel.tsx | CA, commandes, panier moyen |
+| Cuisines | CuisinesPanel.tsx | CRUD cuisines + imprimante + écran KDS |
+| Produits | ProduitsPanel.tsx | Liste produits (read-only) |
+| Salles & Tables | SallesPanel.tsx | CRUD salles/tables, plan interactif drag-drop |
+| Menu | MenuPanel.tsx | CRUD familles + produits avec tailles/suppléments |
+| Personnel | PersonnelPanel.tsx | CRUD employés + pavé numérique 6 chiffres |
+| Licence | LicencePanel.tsx | Activation licence (XXXX-XXXX-XXXX-XXXX) |
+| Compte | ComptePanel.tsx | Session employé + pavé numérique |
+| Mode | ModePanel.tsx | Sélecteur affichage (Caisse/Cuisine/Dashboard) |
+| Paramètres | ParametresPanel.tsx | Réseau, scanner, TPE, monnaie (24 devises) |
+| Comptabilité | ComptabilitePanel.tsx | Ventes, achats, charges, CA, factures proforma |
+| Déploiement | DeploiementPanel.tsx | Wizard 7 étapes (GitHub/Supabase/Vercel/Email) |
+
+1.8 STORES
+----------
+- posStore (pos-cashier) : panier, bons, tables, sessions
+- cartStore (pos-cart) : panier générique, suppléments
+- authStore (pos-auth) : utilisateur, JWT, refresh token
+- currencyStore (pos-currency) : 24 devises, formatage
+
+1.9 SERVICES
+------------
+- api.ts : Axios + refresh token, 10 API endpoints
+- socket.ts : Socket.io auto-reconnect (10 tentatives)
+- offline.ts : Dexie IndexedDB (orders, products, categories, syncLog)
+- printer.ts : ESC/POS tickets thermiques + QR code
+
+1.10 PERMISSIONS
+----------------
+- 6 rôles : ADMIN, MANAGER, CASHIER, KITCHEN, LIVREUR, CLIENT
+- Permissions : caisse/cuisine/dashboard/comptabilite/personnel/deploiement
+- read/write/execute par module
+
+2. WEB (packages/web - Next.js)
+=================================
+
+2.1 PUBLIC
+----------
+- Landing page : Hero, Categories, Produits populaires, Avis
+- Commande en ligne avec panier
+- Réservation avec planning, plan salle interactif
+- Suivi commande par email
+- Appel serveur
+
+2.2 ADMIN WEB
+-------------
+- Stats : salles, tables, produits, commandes, livraisons, réservations
+- Gestion : attributs, catalogue, commandes, comptes, infos, réservations, salles, tables, thème
+
+2.3 COMPOSANTS UI
+-----------------
+- Button, Card, ImageUpload, Input, Modal, Skeleton, Toast
+- Navbar, Footer, Sidebar
+- ThemeProvider, ThemeWrapper
+
+2.4 HOOKS
+---------
+- useAuth, useCart, useRealtime (Supabase), useScrollPosition
+
+================================================================================
+TRAVAIL EFFECTUÉ NOS SESSIONS (SUIVI)
+================================================================================
+
+Les modifications suivantes ont été tracées dans notre conversation :
+
+[A] SESSIONS PRÉCÉDENTES
+-------------------------
+1. SallesPanel : cliquable expand inline, tables visibles
+2. Bouton "+" famille → MenuProduitsPanel pré-sélectionné
+3. Suppression complète sous-familles (types, navigation, formulaires)
+4. Lock/Unlock sur chaque table
+5. Formulaire inline édition table (switch verrouille)
+6. saveTable : String(numero || '').trim() sécurité
+7. loadSalles : String(t.number) pour numero string
+8. startEditTable : paramètre salleId optionnel
+9. saveTable : retrait champ status (occupation serveur)
+10. Restauration vue défaut après suppression accidentelle
+11. Icône Caisse : ShoppingCart → Monitor (POSLayout.tsx)
+
+[B] SESSION ACTUELLE (24 mai 2026)
+-----------------------------------
+12. Familles en colonne verticale gauche permanente
+13. Suppression panelMode state
+14. Suppression retourFamilles
+15. Suppression useEffect [panelMode]
+16. BUG #1 : seats→capacity (3 endroits) — SallesPanel.tsx
+17. BUG #2 : "Se connecter" supprimé — CashierView.tsx
+18. BUG #3 : "Changer compte" → /login + logout — CashierView.tsx
+19. BUG #4 : Suppléments chargés + fallback globalSupps — CashierView.tsx
+20. BUG #5 : Filtrage produit-spécifique → global — CashierView.tsx
+21. BUG #6 : setPanelMode orphelin → fix — CashierView.tsx
+22. BUG #7 : Type union name/nom → cast any — CashierView.tsx
+23. BUG #8 : Chrome chrome-error → fixé #6+#7
+24. Création brain-map + recap
+
+================================================================================
+PROBLÈMES CONNUS
+================================================================================
+- catch { } bare syntax (strict TS risque)
+- 401 = session expirée (refresh token devrait gérer)
+- menuApi.getModifierGroups() 403 pour CASHIER
+- Backend n'écrit pas order_item_modifiers
+- Fallback offline produits sans options (compensé globalSupps)
+- Pas de git → pas d'historique versions

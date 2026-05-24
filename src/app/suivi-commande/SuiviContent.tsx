@@ -18,6 +18,7 @@ interface OrderWithItems {
   order_type: string
   address: string | null
   delivery_status: string
+  preparation_minutes: number
   created_at: string
   updated_at: string
   order_items: {
@@ -69,8 +70,11 @@ export default function SuiviContent({ initialEmail }: { initialEmail: string })
   const [error, setError] = useState('')
   const [orderStatus, setOrderStatus] = useState<string>('')
   const [orderItems, setOrderItems] = useState<OrderWithItems['order_items']>([])
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null)
   const channelRef = useRef<any>(null)
   const searchedRef = useRef(false)
+  const prevStatusRef = useRef<string>('')
+  const timerRef = useRef<any>(null)
 
   const activeOrder = orders.find(o => o.id === selectedOrderId)
   const currentStatus = activeOrder?.status || ''
@@ -89,6 +93,44 @@ export default function SuiviContent({ initialEmail }: { initialEmail: string })
     const order = orders.find(o => o.id === selectedOrderId)
     if (order) { setOrderStatus(order.status); setOrderItems(order.order_items) }
   }, [selectedOrderId, orders])
+
+  // Countdown timer for "preparing" status
+  useEffect(() => {
+    if (currentStatus === 'preparing' && activeOrder?.preparation_minutes && activeOrder.preparation_minutes > 0) {
+      const totalSecs = activeOrder.preparation_minutes * 60
+      setRemainingSeconds(totalSecs)
+      if (timerRef.current) clearInterval(timerRef.current)
+      timerRef.current = setInterval(() => {
+        setRemainingSeconds(prev => {
+          if (prev === null || prev <= 1) { clearInterval(timerRef.current); return 0 }
+          return prev - 1
+        })
+      }, 1000)
+    } else {
+      setRemainingSeconds(null)
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+  }, [currentStatus, activeOrder?.preparation_minutes])
+
+  // Notification sound on status change
+  useEffect(() => {
+    if (prevStatusRef.current && prevStatusRef.current !== orderStatus && orderStatus) {
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.frequency.value = 880
+        gain.gain.setValueAtTime(0.3, ctx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3)
+        osc.start(ctx.currentTime)
+        osc.stop(ctx.currentTime + 0.3)
+      } catch {}
+    }
+    prevStatusRef.current = orderStatus
+  }, [orderStatus])
 
   useEffect(() => {
     if (!selectedOrderId) return
@@ -264,6 +306,19 @@ export default function SuiviContent({ initialEmail }: { initialEmail: string })
                     transition={{ duration: 0.8, ease: 'easeOut' }}
                     className="bg-[var(--primary)] h-2.5 rounded-full" />
                 </div>
+                {currentStatus === 'preparing' && remainingSeconds !== null && (
+                  <div className="mt-4 text-center">
+                    <p className="text-sm text-gray-500 mb-1">Temps restant estimé</p>
+                    <p className={`text-2xl font-bold font-mono ${remainingSeconds <= 60 ? 'text-red-500 animate-pulse' : 'text-gray-900'}`}>
+                      {Math.floor(remainingSeconds / 60)}:{(remainingSeconds % 60).toString().padStart(2, '0')}
+                    </p>
+                  </div>
+                )}
+                {currentStatus === 'ready' && (
+                  <div className="mt-4 text-center">
+                    <p className="text-green-600 font-bold text-lg">Prête !</p>
+                  </div>
+                )}
               </div>
 
               <div className="bg-white/40 backdrop-blur-lg rounded-xl p-5 shadow-lg">
