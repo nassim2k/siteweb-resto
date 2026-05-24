@@ -1,22 +1,30 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import ThemeWrapper from "@/components/ThemeWrapper";
 import ClientLayout from "@/components/ClientLayout";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Mon Restaurant - Réservation & Commande",
-  description: "Réservez votre table et commandez vos plats préférés en ligne",
+  title: "Presty Food — Restaurant & Traiteur Alger",
+  description:
+    "Découvrez Presty Food : cuisine authentique préparée avec des produits frais. Commandez en ligne, réservez une table ou faites-vous livrer.",
+  openGraph: {
+    title: "Presty Food — Restaurant & Traiteur Alger",
+    description:
+      "Cuisine authentique préparée avec des produits frais. Commandez en ligne, réservez une table.",
+    type: "website",
+    locale: "fr_FR",
+  },
 };
 
 export default function RootLayout({
@@ -26,11 +34,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${inter.variable} ${playfairDisplay.variable} antialiased`}
+      >
         <ThemeWrapper>
-          <ClientLayout>
-            {children}
-          </ClientLayout>
+          <ClientLayout>{children}</ClientLayout>
         </ThemeWrapper>
       </body>
     </html>

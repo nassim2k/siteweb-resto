@@ -202,49 +202,46 @@ export default function CommandePage() {
               ))}
             </div>
             <div className="lg:col-span-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {products.map(product => {
                   const textAttrs = productTextAttrs[product.id]
                   return (
                   <motion.div key={product.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-200">
-                    {product.image_url && (
-                      <div className="h-36 overflow-hidden">
-                        <img src={product.image_url} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                    className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
+                    {product.image_url ? (
+                      <div className="h-40 overflow-hidden">
+                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                      </div>
+                    ) : (
+                      <div className="h-24 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                        <UtensilsCrossed className="w-8 h-8 text-gray-300" />
                       </div>
                     )}
                     <div className="p-4">
-                      <h3 className="font-bold">{product.name}</h3>
-                      {product.description && <p className="text-sm text-gray-500 mt-1 leading-relaxed">{product.description}</p>}
+                      <h3 className="font-bold text-gray-900">{product.name}</h3>
+                      {product.description && <p className="text-sm text-gray-500 mt-1 leading-relaxed line-clamp-2">{product.description}</p>}
                       {textAttrs && textAttrs.map(attr => (
                         <div key={attr.id} className="mt-2">
-                          <label className="text-xs font-medium text-gray-600 flex items-center gap-1 mb-1">
-                            <MessageSquareText size={12} /> {attr.name}
-                          </label>
-                          <textarea
-                            value={textValues[product.id]?.[attr.id] || ''}
-                            onChange={e => setTextValues(prev => ({
-                              ...prev,
-                              [product.id]: { ...(prev[product.id] || {}), [attr.id]: e.target.value },
-                            }))}
-                            placeholder={`Votre ${attr.name.toLowerCase()}...`}
-                            rows={1}
-                            className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] resize-none"
-                          />
+                          <textarea value={textValues[product.id]?.[attr.id] || ''}
+                            onChange={e => setTextValues(prev => ({...prev, [product.id]: {...(prev[product.id] || {}), [attr.id]: e.target.value}}))}
+                            placeholder={`${attr.name}...`} rows={1}
+                            className="w-full px-2.5 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] resize-none bg-gray-50" />
                         </div>
                       ))}
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                        <span className="font-bold text-lg text-[var(--primary)]">{formatPrice(product.price)}</span>
-                        <Button size="sm" onClick={() => addItem(product)}>
-                          <ShoppingBag size={14} /> Ajouter
-                        </Button>
+                        <span className="font-bold text-lg" style={{ color: 'var(--primary)' }}>{formatPrice(product.price)}</span>
+                        <button onClick={() => addItem(product)}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all hover:shadow-lg active:scale-95"
+                          style={{ background: `linear-gradient(135deg, var(--primary), var(--secondary, var(--primary)))` }}>
+                          <ShoppingBag size={13} /> Ajouter
+                        </button>
                       </div>
                     </div>
                   </motion.div>
                   )
                 })}
                 {products.length === 0 && (
-                  <p className="text-gray-400 col-span-full text-center py-12">Aucun produit</p>
+                  <p className="text-gray-400 col-span-full text-center py-12">Aucun produit dans cette categorie</p>
                 )}
               </div>
             </div>

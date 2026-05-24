@@ -1,37 +1,58 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --primary: #1e3a5f;
-  --secondary: #f0c040;
-  --accent: #e74c3c;
+@theme inline {
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
+  --color-gold: #b5a07a;
+  --color-gold-light: #d4c4a8;
+  --color-gold-dark: #8a7a5e;
+  --color-dark: #1a1a1a;
+  --color-darker: #0d0d0d;
+  --color-light: #fafaf8;
+  --color-surface: #2a2a2a;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  --background: #fafaf8;
+  --foreground: #1a1a1a;
+  --primary: #b5a07a;
+  --primary-dark: #8a7a5e;
+  --primary-light: #d4c4a8;
+  --surface: #ffffff;
+  --surface-alt: #f5f4f0;
+}
+
+.dark {
+  --background: #0d0d0d;
+  --foreground: #fafaf8;
+  --surface: #1a1a1a;
+  --surface-alt: #2a2a2a;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Scrollbar personnalisée */
-::-webkit-scrollbar {
-  width: 8px;
+::selection {
+  background: var(--primary);
+  color: white;
 }
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
 }
-::-webkit-scrollbar-thumb {
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
   background: #888;
-  border-radius: 4px;
+  border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover {
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
